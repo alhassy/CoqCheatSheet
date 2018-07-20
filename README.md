@@ -1,21 +1,21 @@
 # CoqCheatSheet
 
-This project is to contain a listing of common theorems in elementary category theory.
+This project is to contain a listing of common facts for working with the Coq language.
 **The listing sheet, as PDF, can be found [here](https://github.com/alhassy/CoqCheatSheet/blob/master/CheatSheet.pdf)**, while below is an html rendition.
 
 
 # Table of Contents
 
-1.  [Administrivia, Syntax](#org4768e5a)
-2.  [Pattern matching with `destruct`](#org8d1dadf)
-3.  [Simple Tactics](#orgdd1b996)
-4.  [`intros` tactic: \`∀, ⇒\` introduction](#org05b30fe)
-5.  [`Notation`, `Definition`, and the tactics `fold` and `unfold`](#org7349ae3)
-6.  [Examples of Common Datatypes](#org09fc746)
-7.  [`True, False, true, false`](#orgac3683a)
-8.  [Existence ∃](#org7b25441)
-9.  [Equality, `rewrite`, and `reflexivity`](#org01e139a)
-10. [Discrepancy](#orgc52b167)
+1.  [Administrivia, Syntax](#org61eb486)
+2.  [Pattern matching with `destruct`](#org9ce2c9b)
+3.  [Simple Tactics](#orgb8f0a86)
+4.  [`intros` tactic: \`∀, ⇒\` introduction](#orgbb5d287)
+5.  [`Notation`, `Definition`, and the tactics `fold` and `unfold`](#org89972d2)
+6.  [Examples of Common Datatypes](#orgda1f0d2)
+7.  [`True, False, true, false`](#org4c0b811)
+8.  [Existence ∃](#orgcac05cb)
+9.  [Equality, `rewrite`, and `reflexivity`](#org9fed49e)
+10. [Discrepancy](#orgcfdb700)
 
 
 
@@ -28,7 +28,7 @@ This project is to contain a listing of common theorems in elementary category t
 
 
 
-<a id="org4768e5a"></a>
+<a id="org61eb486"></a>
 
 # Administrivia, Syntax
 
@@ -85,7 +85,7 @@ proof power. For example, try proving:
 \fi
 
 
-<a id="org8d1dadf"></a>
+<a id="org9ce2c9b"></a>
 
 # Pattern matching with `destruct`
 
@@ -103,7 +103,7 @@ could have produced `e` such that the *i*-th constructor has arguments `ai0, …
 -   If there are no arguments to name, in the case of a nullary construction, we can just write `[]`.
 
 
-<a id="orgdd1b996"></a>
+<a id="orgb8f0a86"></a>
 
 # Simple Tactics
 
@@ -120,7 +120,7 @@ could have produced `e` such that the *i*-th constructor has arguments `ai0, …
     the hypothesis, term, `s`. For example, `unfold defnName in item` performs a local rewrite.
 
 
-<a id="org05b30fe"></a>
+<a id="orgbb5d287"></a>
 
 # `intros` tactic: \`∀, ⇒\` introduction
 
@@ -134,7 +134,7 @@ could have produced `e` such that the *i*-th constructor has arguments `ai0, …
     the current subgoal.
 
 
-<a id="org7349ae3"></a>
+<a id="org89972d2"></a>
 
 # `Notation`, `Definition`, and the tactics `fold` and `unfold`
 
@@ -169,7 +169,7 @@ Tactics `unfold defnName` and `fold defnName` will interchange them.
 \newpage
 
 
-<a id="org09fc746"></a>
+<a id="orgda1f0d2"></a>
 
 # Examples of Common Datatypes
 
@@ -211,7 +211,7 @@ Tactics `unfold defnName` and `fold defnName` will interchange them.
         Infix "::" := cons (at level 60, right associativity) : list_scope.
 
 
-<a id="orgac3683a"></a>
+<a id="org4c0b811"></a>
 
 # `True, False, true, false`
 
@@ -243,7 +243,7 @@ In the boolean library there is a function `Is_true` which converts booleans
 into their associated Prop counterparts.
 
 
-<a id="org7b25441"></a>
+<a id="orgcac05cb"></a>
 
 # Existence ∃
 
@@ -279,7 +279,7 @@ The converse is also true!
 \fi
 
 
-<a id="org01e139a"></a>
+<a id="org9fed49e"></a>
 
 # Equality, `rewrite`, and `reflexivity`
 
@@ -335,7 +335,7 @@ Use the `reflexivity` tactic to discharge a goal of type `x = x`.
     \fi
 
 
-<a id="orgc52b167"></a>
+<a id="orgcfdb700"></a>
 
 # Discrepancy
 

@@ -8,7 +8,7 @@
 # CoqCheatSheet
 #+END_export
 
-This project is to contain a listing of common theorems in elementary category theory.
+This project is to contain a listing of common facts for working with the Coq language.
 *The listing sheet, as PDF, can be found [[https://github.com/alhassy/CoqCheatSheet/blob/master/CheatSheet.pdf][here]]*, while below is an html rendition.
 #+TOC: headlines 2
 
