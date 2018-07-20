@@ -1,0 +1,21 @@
+#+OPTIONS: toc:nil
+#+DESCRIPTION: A listing of common facts for working with the Coq language.
+#+TITLE: Beginning Coq Reference Sheet
+#+AUTHOR: [[http://www.cas.mcmaster.ca/~alhassm/][Musa Al-hassy]]
+#+EMAIL: alhassy@gmail.com
+
+#+BEGIN_export markdown
+# CoqCheatSheet
+#+END_export
+
+This project is to contain a listing of common theorems in elementary category theory.
+*The listing sheet, as PDF, can be found [[https://github.com/alhassy/CoqCheatSheet/blob/master/CheatSheet.pdf][here]]*, while below is an html rendition.
+#+TOC: headlines 2
+
+#+INCLUDE: CheatSheet.org
+
+* COMMENT footer
+# Local Variables:
+# eval: (visual-line-mode t)
+# compile-command: (progn (org-md-export-to-markdown))
+# End:
