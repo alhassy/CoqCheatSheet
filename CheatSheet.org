@@ -1,7 +1,7 @@
-#+INCLUDE: CheatSheetSetup.org
+#+INCLUDE: CheatSheet/CheatSheetSetup.org
 
 * title                                                              :ignore:
-#+TITLE: Reference Sheet for ``What I'm Currently Learning''
+#+TITLE: Beginning Coq Reference Sheet
 # SUBTITLE: Cheat Sheet Template
 # DATE: << Spring 2018 >>
 # When we don't provide a date, one is provided for us.
@@ -12,320 +12,461 @@
 #+STARTUP: overview
 #+TODO: { TEMPLATE(t) BEGIN-IGNORE(b) END-IGNORE(e) } | DONE(d)
 
+* Administrivia, Syntax
 
-* Hello, World!
++ Every Coq command ends with a period.
++ The phrase /Theorem T identifying statement S is proven by P/
+  is formalised as
+  #+BEGIN_SRC 
+  Theorem T : S.  (* T is only a name and can be used later. *)
+  Proof.
+  P  (* See the current state of the proof in the CoqIde by clicking, in the toolbar, 
+        on the green arrow pointing at a yellow ball;
+        or do "C-c C-Enter" in Proof General with Emacs. *)
+  Qed.
+  #+END_SRC
 
-+ Pretty PDF :: Enter ~M-x compile~ to produce a nice looking PDF of your reference sheet.
-  - I've bound this command to ~C-c C-m~ in my Emacs setup ;-)
++ Instead of ~Theorem~, you may also see proofs that start with
+  ~Example~, ~Lemma~, ~Remark~, ~Fact~, ~Corollary~, and ~Proposition~, which all
+  mean the _SAME_ thing. This difference is mostly a matter of style.
 
-+ Section Headers :: A usual Org header, say ~* my section~, results in the boxed headers
-     used in this cheat sheet.
++ The command ~Admitted~, in-place of ~Qed~, can be used as a placeholder for an
+    incomplete proof or definition.
 
-+ Parallel Environments :: The sequence ~<p TAB~ produces a `parallel' environment for
-     producing text side-by-side. The column break is automatic, but as 
-     this is sugar for a ~minipage~ containing a ~multicolum~ we can force a column
-     separation with ~\columnbreak~: This command, in Org, necessities newlines between
-     the items being separated.
+    # The [Admitted] command tells Coq that we want to skip trying
+    # to prove this theorem and just accept it as a given.  This can be
+    # useful for developing longer proofs, since we can state subsidiary
+    # lemmas that we believe will be useful for making some larger
+    # argument, use [Admitted] to accept them on faith for the moment,
+    # and continue working on the main argument until we are sure it
+    # makes sense; then we can go back and fill in the proofs we
+    # skipped.  Be careful, though: every time you say [Admitted] you
+    # are leaving a door open for total nonsense to enter Coq's nice,
+    # rigorous, formally checked world!
 
-\vspace{1em}
-To learn more, manipulating this source is the way to go!
+   # admit, or pretending proofs exist
 
-\newpage
+    # It ends a subgoal without solving it. I use it below to let Coq's parser bypass this unproven theorem.
+    # The "admit" tactic has its uses, though. When there are multiple subgoals and you want to skip over the easy ones to work on the hard one first, the "admit" tactic can be used to get the easy subgoals out of the way. Or, if you are only part way done a proof but you want send someone a Coq file that parses, "admit" can be used to fill in your blanks.
+    # 
+    - Useful if you have a subgoal that you want to ignore for a while.
 
-* Org-mode Basics
++ ~Abort~, in-place of ~Qed~, is used to give up on a proof for the moment,
+  say for presentation purposes, and it may be begun later with no error
+  about theorems having the same name.
 
-Read [[https://orgmode.org/worg/org-tutorials/org4beginners.html][Org-mode for beginners]] for a refresher!
-  - For more see [[https://orgmode.org/orgguide.pdf][The Compact Org-mode Guide]].
+# Comment to seperate labelled enumeration above, from unlabelled below.
 
-\vspace{1em}
++ Comments :: ~(* I may be a multiline comment. *)~
 
-+ Reloading :: To reload a file with updated org settings, press
- ~C-c C-c~ on a settings line --i.e., one beginning with a ~#+~, to reset the 
-  temporary file cache.
++ Stand alone commands :: As top-level items, we may make commands for:
+  - Normalisation :: ~Compute X~ executes all the function calls in ~X~ and prints the result.
+  - Type inspection :: Command ~Check X.~ asks Coq to print the type of expression ~X~.
 
-+ Inclusion :: During export, you can include the content of another file. 
-  - Syntax: ~#+INCLUDE: "⟨fileName⟩" [⟨markup⟩ [⟨language⟩]]~
-    * ~markup ::= src | example~
-    * ~language ::= C | haskell | emacs-lisp | ⋯~ 
-    * If the markup is not given, the text will be assumed to be in 
-      Org mode format and will be processed normally; c.f., [[https://orgmode.org/manual/In_002dbuffer-settings.html][Setup files]].
-  
-  - To visit the file, ~C-c '~ while the cursor is on the line with the file name.
++ Introduce local definitions :: Two ways,
+ - Simple alias: ~pose (new_thing := complicated_expression).~
+ - More involved: Write tactic ~assert (x : X).~ to define a new identifier
+    ~x~ for a proof of ~X~ which then follows, and is conventionally indented.
 
-* Grep
++ Imports :: Loading definitions from a library,
+   #+BEGIN_EXAMPLE
+Require Import Bool.
+#+END_EXAMPLE
 
-+ Find all files containing specific text :: \forcenewline
-  `r'ecursively look for the `w'hole given pattern: \\
-  ~grep -rw '/path/to/somewhere/' -e 'pattern'~
+\iffalse
++ Pattern matching with ~case~ ::
+   # For an element ~xs~ of a type having /n/ constructors, ~case xs~ produces ~n~ subgoals of the form ~A₁ → ⋯ → Aₙᵢ → newSubgoal~ where the ~Aⱼ~ are the arguments of the constructor.
 
-  # - Example: Look for a word starting at the root, ~grep -rw '/' -e 'lattice'~
+  If we do a ~case~ on an item of type ~A \/ B~ then we obtain two new subgoals:
+    ~A → …~ and ~B → …~, which may be begun with ~intros~ as usual.
 
-+ Better :: ~ack 'text-to-find-here' locationToBeginLooking~
-  - [[https://beyondgrep.com/][ack]] is like grep, but for source code.
-  - It looks prettier and more informative. 	    
+  + ~case~ alters subgoals and never the context already ~intro~-duced.
 
+The "case" tactic only changes the subgoal.
+Hence whether it is invoked before all possible intros or not gives different
+proof power. For example, try proving:
+#+BEGIN_EXAMPLE
+Theorem thm_eqb_a_t: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)).
+#+END_EXAMPLE
+\fi
 
-* space, newpage :ignore:
+* Pattern matching with ~destruct~
 
-\vspace{15em} 
+We case on value ~e~ by ~destruct e as [ a00 … am0 | ⋯ | a0n … amn ]~,
+which gives us ~n~ new subgoals corresponding to the number of constructors that
+could have produced ~e~ such that the /i/-th constructor has arguments ~ai0, …, akᵢ~.
 
-\centerline{The next page contains sample output from a logic-based class.}
-\newpage
++ The intros pattern ~as [ ⋯ ]~ lets us use any friendly names of our choosing.
+  We may not provide it at the cost of Coq's generated names for arguments.
 
-* Latex setup to make example sections work :ignore:
+#  Note that the [destruct] here has no [as] clause because
+#     none of the subcases of the [destruct] need to bind any variables,
+#     so there is no need to specify any names.  (We could also have
+#     written [as [|]], or [as []].)  In fact, we can omit the [as]
+#     clause from _any_ [destruct] and Coq will fill in variable names
+#     automatically.  This is generally considered bad style, since Coq
+#     often makes confusing choices of names when left to its own
+#     devices.
 
-#+BEGIN_EXPORT latex
+# Pattern match from the get-go
 
-% from Wolfram Kahl's CalcStyleV9
-\def\withrule{\vrule height1.57ex depth0.43ex width0.12em}
-\def\with{\kern0.7em \withrule \kern0.7em }
++ Many proofs pattern match on a variable right after introducing it,
+  ~intros e. destruct e as [⋯]~, and this is abbreviated by the intro pattern:
+  ~intros [⋯]~.
 
-\def\even{ \mathsf{even} \, }
-\def\eq{ \;=\; }
-\def\lorS{ \quad\lor\quad }
-\def\lors{ \;\lor\; }
-\def\landS{ \quad\land\quad }
-\def\lands{ \;\land\;}
++ If there are no arguments to name, in the case of a nullary construction, we can just write ~[]~.
 
-\def\equivS{ \quad\equiv\quad }
-\def\equivs{ \;\equiv\;}
+* Simple Tactics
 
-\def\eqS{ \quad=\quad }
-\def\eqs{ \;=\;}
++ ~exact~ :: If the subgoal matches an /exact/ hypothesis,
+     Then use ~exact <hyp_name>.~
 
-\def\subseteqs{ \;\subseteq\; }
-\def\subseteqS{ \quad\subseteq\quad }
++ ~simpl~ :: 
+  #  ~simpl~. It is short for ~simplify~. 
+  If the current subgoal contains a function call with all its arguments, ~simpl~ will execute the function on the arguments.
 
-\def\impliesS{ \quad\Rightarrow\quad }
-\def\impliess{ \;\Rightarrow\;}
-\def\implies{ \Rightarrow }
+  - Sometimes a call to ~unfold f~, for a particular function ~f~, is needed before ~simpl~ will work.
 
-\def\spot{ \;\bullet\; }
++ Modus ponens, or function application :: If we have ~imp : A -> B, a : A~
+  then ~imp a~ is of type ~B~. This also works if the ~imp~ contains ~forall~'s.
 
-\def\meet{ \;\sqcap\; }
-\def\join{ \;\sqcup\; }
-\def\sqleq{ \sqsubseteq }
-\def\sqleqs{ \;\sqsubseteq\; }
++ Local tactic application :: ~t in s~ performs the tactic ~t~ only within
+     the hypothesis, term, ~s~. For example, ~unfold defnName in item~ performs a local rewrite.   
 
-\def\Id{\mathsf{Id}}
-\def\true{\mathsf{true}}
-\def\false{\mathsf{false}}
-\def\fst{\mathsf{fst}}
-\def\snd{\mathsf{snd}}
+* ~intros~ tactic: `∀, ⇒` introduction
 
-\def\IF #1 : #2 : #3 \FI{ \mathsf{if}\; { #1 } \;\mathsf{then}\; { #2 } \;\mathsf{else}\; { #3 } \;\mathsf{fi} }
++ To prove a statement of the form ~(forall A : Prop, Q)~ we use the ∀-introduction
+  tactic, supplied with a name for the variable introduced, as in ~intros A.~
 
-\def\RR{\mathbb{R}}
-\def\NN{\mathbb{N}}
-\def\ZZ{\mathbb{Z}}
-\def\22{\mathbf{2}}
-\def\11{\mathbf{1}}
++ To prove an implication ~A ⇒ B~ we again use, say, ~intros pf_of_A.~
+  # since implications are implicitly universally quantified:
+  # $A ⇒ B$ denotes $(forall pf_of_A : B, C)$.
 
-\def\notOccurs#1#2{ $\lnot \occurs{#1}{#2}$}
-#+END_EXPORT
++ The ~intros~ command can take any positive number of
+  arguments, each argument stripping a ~forall,~ (or ~->~), off the front of
+  the current subgoal.
+  # We can combined all
+  # the ~intros~ into a single command, but it is cleaner to
+  # introduce the Props and the derived values separately.
+* ~Notation~, ~Definition~, and the tactics ~fold~ and ~unfold~
 
-* Propositional Calculus
+~Definition~ is a vernacular command that says two expressions are interchangeable. 
+Below ~(not A)~ and ~A -> False~ are declared interchangeable.
 
-+ Metatheorem :: Any two theorems are equivalent; ` $\true$ ' is a theorem.
+#+BEGIN_EXAMPLE 
+Definition not (A:Prop) := A -> False.
 
-[[https://ac.els-cdn.com/S0020019000002052/1-s2.0-S0020019000002052-main.pdf?_tid=35e86bb2-edb0-11e7-b1fe-00000aab0f26&acdnat=1514672861_56b3d86466d284cbc76cc2641c47af86][_Equivales_]] is an equivalence relation that is associative --- $((p \equiv q) \equiv r)\equivs(p \equiv (q \equiv r))$ ---
-and has identity $\true$.
+Notation "~ x" := (not x) : type_scope.
+#+END_EXAMPLE
 
-\underline{Discrepancy} ` $\not\equiv$ ' is symmetric, associative, has identity ` $\false$ ',
-mutually associates with equivales --- $((p \not\equiv q) \equiv r) \equivs (p \not\equiv (q \equiv r))$ ---
-and mutually interchanges with it as well
---- $p \not\equiv q \equiv r \equivs    p \equiv q \not\equiv r$ ---.
+Tactics ~unfold defnName~ and ~fold defnName~ will interchange them. 
 
-*** implication :ignore:
+~Notation~ creates an operator and defines it as an alternate notation for an expression.
 
-\vspace{1ex}
+( Use ~intros~ when working with negations since they are implications! )
 
-\underline{Implication} has the alternative definition $p \implies q \;\equiv\; \lnot p \lor q$,
-has $\true$ as left identity and $\false$ as right zero,
-distributes over $\equiv$ in the second argument, and is self-distributive;
-and has the properties
+# (The ~Notation~ command is how the operator ~->~ was created from ~(forall ...)~.)
 
-# 
-#+begin_parallelNB
-+ Shunting ::  \invisible{hi}\vspace{-0.5em}
-  |$ p \land q \implies r \equivS  p \implies (q \implies r)$|
+**fix me**
+#+BEGIN_EXAMPLE coq
+(* If this is a recursive function, use `Fixpoint` in-place of `Definition`.*)
+Definition my_function (a₀ : A₀) ⋯ (aₙ : Aₙ) : B :=
+  match a₀ , …,  aₙ with
+  | C₀ p₀ … pₘ , …, Cₙ q₀ ⋯ qₖ =>  definition_here_for_these_constructors_Cᵢ
+  ⋮
+  end.
+#+END_EXAMPLE
 
-+ Contrapositive ::  \invisible{hi}\vspace{-0.5em}
-  | $ p \implies q \quad\equiv\quad \lnot q \implies \lnot p$ |
++ Telescoping :: If ~x₀, ⋯, xₙ~ have the same type, say ~T~,
+		 we may declare their typing by ~(x₀ ⋯ xₙ : T)~.
++ Notation :: Before the final ".", we may include a variant of
+   ~where "n + m" := (my_function n m) : B_scope.~ for introducing
+   an operator immediately with a function definition.
 
-\columnbreak
+* COMMENT Proof Refinement
 
-+ Modus Ponens :: \invisible{hi}\vspace{-2em}		  
-  | $p \land (p \implies q)$ | \equiv   | $p \land q$ |
-  | $p \land (q \implies p)$ | \equiv   | $p$         |
-  | $p \land (p \implies q)$ | \implies | $q$         |
+Suppose our goal is to prove B but we have a proof ~imp : A → B~,
+then if we have an ~A~ function application suffices. However,
+when we have no ~A~ lying about and would like to focus on constructing
+such an ~A~ we use ~refine (imp _)~ which forces us into constructing
+a subgoal ~A~. It is good practice to then indent proof for the new subgoal.
 
-#+end_parallelNB
++ If ~imp~ has more arguments then ~refine~ would take more underscores corresponding
+  to the arguments we do not have proofs of; we may place the arguments which we
+  do have access to there and then.
 
-Moreover it has the useful property ``(3.62)'': 
- $p \implies (q \equiv r) \equivS p \land q    \equivs    p \land r$.
++ Needless to say, a ~refine~ may occur within a ~refine~.
 
-*** conjunction and disjunction                                      :ignore:
-\vspace{1ex}
-\underline{Conjunction and disjunction} distribute over one another,
-$\lor$ distributes over $\equiv$,
-$\land$ distributes over $\equiv-\equiv$
-in that $p \land (q \equiv r \equiv s) \equivS p \land q \equivs p \land r  \equivs p \land s$,
-and they satisfy,
+\iffalse
+#+BEGIN_SRC 
+Theorem nexted_refine_example : (forall A B C : Prop, A -> (A->B) -> (A->B->C) -> C).
+Proof.
+  intros A B C.
+  intros Apf AtoB AthenBthenC.
+  refine (AthenBthenC _ _).
+    exact Apf.
+    refine (AtoB _).
+      exact Apf.
+Qed.
 
-| *Excluded Middle* | *Contradiction*                 | *Absorption*                                | *De Morgan*                                      |
-| $p \lor \lnot p$  | $p \land \lnot p \equiv~\false$ | $p \land (\lnot p \lor q) \equiv p \land q$ | $\lnot (p \land q) \equiv \lnot p \lor  \lnot q$ |
-|                   |                                 | $p \lor (\lnot p \land q) \equiv p \lor  q$ | $\lnot (p \lor q)  \equiv \lnot p \land \lnot q$ |
-
-
-**** COMMENT alternate table 
-#+begin_parallel3NB
-
-+ Excluded Middle ::  $p \lor \lnot p$
-
-+ Contradiction ::
-  #+LaTeX: {hi. \vspace{-2em} $\invisible{Hi! Hello!}~p \land \lnot p \equiv~\false$}
-  
-  # + \scriptsize Contradiction :: \scriptsize $p \land \lnot p \equiv~\false$
-  
-\columnbreak
-  
-+ Absorption :: 
-    | $p \land (\lnot p \lor q)$ | \equiv | $p \land q$ |
-    | $p \lor (\lnot p \land q)$ | \equiv | $p \lor  q$ |
-
-\columnbreak
-
-+ De Morgan ::
-   | $\lnot (p \land q)$ | \equiv | $\lnot p \lor  \lnot q$ |
-   | $\lnot (p \lor q)$  | \equiv | $\lnot p \land \lnot q$ |
-
-#+end_parallel3NB
-
-* [[https://frama-c.com/][Loops implement finite quantifications]]
-
-#+LATEX_HEADER: \DeclareUnicodeCharacter{119931}{\ensuremath{\mathbf{T}}} % math bold caps 𝑻
-
-A finite quantification can be defined axiomatically
-by the empty-range rule and split-off term rules.
-Together these form a recursive definition which can be phrased as a loop.
-#
-#+begin_parallel c
-
-#+NAME: ?
-#+BEGIN_SRC c :tangle sheet_code.c
-// For -⊕- : 𝑻 → 𝑻 → 𝑻,
-// fold(A,a,b) ≈ (⊕ x : a..b-1 • A[x]) 
-/*@ axiomatic Fold { 
-  @   
-  @ logic 𝑻
-  @   fold{L}(𝑻 *A, integer a, integer b)
-  @   reads a,b,A, A[..] ;
-  @
-  @ axiom foldEmptyRange{L} :
-  @   \forall 𝑻 *A, integer a, b; a >= b
-  @   ==>  fold(A,a,b) == identity(⊕);
-  @
-  @ axiom foldSplitOffTerm{L} :
-  @   \forall 𝑻 *A, integer a, b; a <= b
-  @   ==>     fold(A, a, b+1) 
-  @        == fold(A, a, b  ) ⊕ A[b];
-  @ }
-  @*/
+Theorem direct_proof : (forall A B C : Prop, A -> (A->B) -> (A->B->C) -> C).
+Proof.
+  intros A B C Apf AB ABC.
+  exact (ABC Apf (AB Apf)).
+Qed.
 #+END_SRC
+\fi
 
-\columnbreak
 
-#+NAME: ?
-#+BEGIN_SRC c :tangle sheet_code.c
-/*@ requires \valid(A+(0..N-1));
-  @ assigns \nothing;
-  @ ensures \result == fold(A,0,N);
-  @*/
-𝑻 fold(int N, 𝑻* A) {
-
-    𝑻 total = identity(⊕);
-    
-    /*@ loop invariant 0 <= n <= N;
-      @ loop invariant total == fold(A,0,n);
-      @ loop assigns n, total;
-      @ loop variant N-n;
-    */
-    for(int n = 0; n != N; n++)
-        total = total ⊕ A[n];
-    return total;
-}
-#+END_SRC
-#+end_parallel
-
-This pseudo-code is reified by giving concrete values
-for ~(𝑻, ⊕, identity)~ such as ~(int, +, 0)~ or ~(bool, ||, false)~.
-Any [[https://en.wikipedia.org/wiki/Monoid][monoid]] will do.
-
+* newpage :ignore:
 
 \newpage
 
-* Lattices
-# Environments
-# Our common environments will be the following distributive lattices
-The distributive lattice interface /(L, ⊑, ⊓, ⊔, ⊥, ⊤)/ has the following implementations:
+* Examples of Common Datatypes
 
-+ Booleans: $(𝔹, \implies, \land, \lor, \false, \true)$ 
-  #+LaTeX: {\hfill\color{red}---Our ambient logic!}
-  # Assume this sheet instantiated to this structure.
++ ~Prop~ Type
+  - A ~Prop~ either has a proof or it does not have a proof. 
+  - Coq restricts Prop to being either proven or unproven, rather than true or false.   
 
-+ Extended Number Line:  $(\RR, \leq, \min, \max, -\infty, +\infty)$ 
++ Sums
+   #+BEGIN_EXAMPLE
+Inductive or (A B:Prop) : Prop :=
+  | or_introl : A -> A \/ B
+  | or_intror : B -> A \/ B
+where "A \/ B" := (or A B) : type_scope.
+#+END_EXAMPLE
 
-+ Naturals under division: $(\NN, \, |, \gcd, \mathsf{lcm}, 1, 0)$
++ Products
+  #+BEGIN_EXAMPLE
+Inductive and (A B:Prop) : Prop :=
+  conj : A -> B -> A /\ B
+where "A /\ B" := (and A B) : type_scope.
+#+END_EXAMPLE
 
-  # \item Sets : $(\power \ X, \subseteq, \cap, \cup, \emptyset, X)$
-+ Substructures of a given /datatype/ with the substructure ordering.
-   \newline E.g., sets, lists, and graphs with subset, subsequence, and subgraph ordering.
-   # %, respectively.
-   # Subllists/subtrees/subgraphs/$\cdots$ of a given one with subsequence/subtree/subgraph ordering.
++ ℕaturals
+  #+BEGIN_EXAMPLE
+Inductive nat : Set :=
+  | O : nat   (* Capital-letter O, not the number zero. *)
+  | S : nat -> nat.
+#+END_EXAMPLE
 
-# \item Programs ordered by refinement with join being demonic choice % $\framebox(3,10){}$
-#   having bottom element be the \verb+ABORT+ program.
++ Options
+  #+BEGIN_EXAMPLE 
+Inductive option (A : Type) : Type :=
+  | Some : A -> option A
+  | None : option .A
+#+END_EXAMPLE
 
-An /order/ is a relation /-⊑- : L → L → 𝔹/  satisfying the following three properties:
-| *Reflexivity* | *Transitivity*              | *Antisymmetry*            |
-| /a ⊑ a/     | /a ⊑ b ∧ b ⊑ c ⇒ a ⊑ c/ | /a ⊑ b ∧ b ⊑ a ⇒ a = b/ |
++ Lists
+  #+BEGIN_EXAMPLE
+Inductive list (A : Type) : Type :=
+ | nil : list A
+ | cons : A -> list A -> list A.
 
-An order is /bounded/ if there are elements /⊤, ⊥ : L/ being the lower and upper bounds of all other elements:
-| *Top Element*    | *Bottom Element* |
-| $a \sqleqs \top$ | $\bot \sqleqs a$ |
+Infix "::" := cons (at level 60, right associativity) : list_scope.
+#+END_EXAMPLE
 
-A /lattice/ is a pair of operations /-⊓-, -⊔- : L → L → L/ specified by the properties:
-| *⊔-Characterisation*          | @@latex: $\qquad$@@ | *⊓-Characterisation*                        |
-| @@latex: $a ⊑ c ∧ b ⊑ c \equivS a ⊔ b ⊑ c$ @@ | | @@latex: $c ⊑ a ∧ c ⊑ b \equivS c ⊑ a ⊓ b$ @@ |
-# \hfill{\color{grey}(8.6)}}
+* ~True, False, true, false~
 
-Let $\square$ be one of $\meet$ or $\join$, then:
-| *Symmetry of □* | *Associativity of □* | *Idempotency of □* |
-| $a □ b \eqs b □ a$ | $(a □ b) □ c \eqs a □ (b □ c)$ | $a □ a \eqs a$     |
+The vernacular command ~Inductive~ lets you create a new type.
+
++ The empty Prop, having no proofs, is ~False.~
++ The top Prop, having a single proof named ~I~, is ~True~.
++ The ~bool~ type has two values: ~true~ and ~false~.
+
+#+BEGIN_EXAMPLE
+Inductive False : Prop := .
+
+Inductive True : Prop :=
+  | I : True.
+
+Inductive bool : Set :=
+  | true : bool
+  | false : bool.
+#+END_EXAMPLE
+
+\iffalse principle of explosion
+#+BEGIN_EXAMPLE
+Theorem ex_falso_quod_libet : (forall A : Prop, False -> A).
+Proof.
+  intros A []
+Qed.
+#+END_EXAMPLE
+# Instead of "exact", we use the "case" tactic. "case" is powerful: it creates subgoals for every possible construction of its argument. Since there is no way to construct a False, "case" creates no subgoals! Without a subgoal, we're done!
+\fi
+
+In the boolean library there is a function ~Is_true~ which converts booleans
+into their associated Prop counterparts.
+* Existence ∃
+
+# The mathematical /∃ x : X • P x/ is captured by ~ex P~ for ~P : X -> Prop~.
+#+BEGIN_EXAMPLE
+Inductive ex (A:Type) (P:A -> Prop) : Prop :=
+  ex_intro : forall x:A, P x -> ex (A:=A) P.
+
+Notation "'exists' x .. y , p" := (ex (fun x => .. (ex (fun y => p)) ..))
+  (at level 200, x binder, right associativity,
+   format "'[' 'exists'  '/  ' x  ..  y ,  '/  ' p ']'")
+  : type_scope.
+#+END_EXAMPLE
+
+Note that the constructor takes 3 arguments: The predicate ~P~, the witness ~x~, and a proof of ~P x~.
+
+If we pose a witness beforehand then ~refine (ex_intro _ witness _).~, Coq will infer ~P~ from
+the current goal and the new subgoal is the proof that the witness satisfies the predicate.
+
+\iffalse
+Note that De Morgan's law, ¬∀≈∃¬, holds! Prove an implication to see this.
+#+BEGIN_EXAMPLE
+Theorem demorgan : (forall P : Set->Prop, (forall x, ~(P x)) -> ~(exists x, P x)).
+Proof.
+  intros P.
+  intros noP.
+  unfold not.
+  intros ex.
+  destruct ex as [ witness  proof ].
+  pose (uhoh := noP witness).
+  pose (absurd := uhoh proof).
+  case absurd.
+Qed.
+#+END_EXAMPLE
+The converse is also true!
+\fi
 
 
-| *Zero of □*    | *Identity of □* | *Absorption*      | *Self-Distributivity of □* |
-|  $a ⊔ ⊤ = ⊤$    | $a ⊔ ⊥ = a$    |  $a ⊓ (a ⊔ b) = a$ | $a □ (b □ c) \eqS (a □ b) □ (a □ c)$ |
-|  $a ⊓ ⊥ = ⊥$  | $a ⊓ ⊤ = a$      | $a ⊔ (a ⊓ b) = a$ | |
+
+* Equality, ~rewrite~, and ~reflexivity~
+
+Two operators,
++ ~x = y :> A~ says that ~x~ and ~y~ are equal and both have type ~A~. 
++ ~x = y~ does the same but let's Coq infer the type ~A~.
+
+#+BEGIN_EXAMPLE
+Inductive eq (A:Type) (x:A) : A -> Prop :=
+    eq_refl : x = x :>A
+
+where "x = y :> A" := (@eq A x y) : type_scope.
+
+Notation "x = y" := (x = y :>_) : type_scope.
+#+END_EXAMPLE
+
+\iffalse
+
+The "Inductive" statement creates a new type "eq" which is a function of a type A and 2 values of type A to Prop. (NOTE: One value of type A is written (x:A) before the ":" and the other is written "A ->" after. This is done so Coq infers the type "A" from the first value and not the second.) Calling "eq" with all its arguments returns a proposition (with type Prop). A proof of "eq x y" means that "x" and "y" both have the same type and that "x" equals "y".
+
+The only way to create a proof of type "eq" is to use the only constructor "eq_refl". It takes a value of "x" of type "A" and returns "@eq A x x", that is, that "x" is equal to itself. (The "@" prevents Coq from inferring values, like the type "A".) The name "eq_refl" comes from the reflexive property of equality.
+
+\fi
+
+Rather than using ~destruct~, most proofs using equality use the tactics ~rewrite ⟨orientation⟩.~ 
+If ~xEy~ has type ~x = y~, then ~rewrite -> xEy~ will replace ~x~ with ~y~ in the subgoal, while using orientation ~<-~ rewrites the
+other-way, replacing ~y~ with ~x~.
+  #
+  # Note the space with "rewrite" and "<-".
+
+ - This can also be used with a previously proved theorem.
+   If the statement of said theorem involves quantified variables,
+   Coq tries to instantiate them by matching with the current goal.
+
+ - As with destructing, the pattern ~intros eq. rewrite -> eq.~
+   is abbreviated by the intro pattern ~intros [].~ which performs
+   a left-to-right rewrite in the goal.
+
+** reflexivity tactic :ignore:
+
+Use the ~reflexivity~ tactic to discharge a goal of type ~x = x~.
+ + This tactic performs some simplification automatically
+   when checking that two sides are equal; e.g., it tries ~simpl~ and ~unfold~.
+
+    \iffalse
+    Moreover, it will be useful later to know that [reflexivity]
+    does somewhat _more_ simplification than [simpl] does -- for
+    example, it tries "unfolding" defined terms, replacing them with
+    their right-hand sides.  The reason for this difference is that,
+    if reflexivity succeeds, the whole goal is finished and we don't
+    need to look at whatever expanded expressions [reflexivity] has
+    created by all this simplification and unfolding; by contrast,
+    [simpl] is used in situations where we may have to read and
+    understand the new goal that it creates, so we would not want it
+    blindly expanding definitions and leaving the goal in a messy
+    state.
+    \fi
+
+* Discrepancy
+
+Coq uses the operator ~<>~ for inequality, which really means /equality is unprovable/ or /equality implies False/.
+#+BEGIN_EXAMPLE coq
+Notation "x <> y  :> T" := (~ x = y :>T) : type_scope.
+Notation "x <> y" := (x <> y :>_) : type_scope.
+#+END_EXAMPLE
+
+** discriminate                                                      :ignore:
+
+Datatype constructors are necessarily disjoint, hence if we ever obtain a proof ~pf~
+of distinct constructors being equal then we may invoke ~discriminate pf~ to short-circuit the
+current goal, thereby eliminating a case that could not have happened.
+
+\iffalse
+~discriminate~ operates on a hypothesis where values of inductive type are compared using equality. If the constructors used to generate the equality type are different, like here where we have ~true = false~, then Coq knows that situation can never happen. It's like a proof of ~False~. In that case, ~discriminate <hypname>.~ ends the subgoal.
+
+#+BEGIN_EXAMPLE
+Theorem example  : forall A, true = false -> A.
+Proof.
+  intros A tEf.
+  discriminate tEf.
+Qed.
+#+END_EXAMPLE
+
+When working with inductive types, you will use "discriminate" to eliminate a lot of cases that can never happen.
+
+RULE: If you have a hypothesis "<name> : (<constructor1> ...) = (<constructor2> ...) OR "<name> : <constant1> = <constant2> Then use the tactic "discriminate <name>"
+\fi
 
 
-| *Weakening / Strengthening* | *Induced Defs. of Inclusion* | *Golden Rule*                                    |
-| $a \;⊑\; a ⊔ b$             | $a ⊑ b \equivS a ⊔ b \eqs b$ | $a ⊓ b \;=\; a \hspace{1.52em}\equivs b = a ⊔ b$ |
-| $a ⊓ b \;⊑\; a$             | $a ⊑ b \equivS a ⊓ b \eqs a$ | $a ⊓ b \;=\; a ⊔ b \equivs a = b$                |
-| $a ⊓ b \;⊑\; a ⊔ b$         |                              | $a ⊔ b \;⊑\; a ⊓ b \equivs a = b$                |
-| $a ⊔ (b ⊓ c) \;⊑\; a ⊔ b$ | *Monotonicity of □*         |                                                  |
-| $a ⊓ b \;⊑\; a ⊓ (b ⊔ c)$ | $a ⊑ b \lands c ⊑ d \impliess a □ c \;⊑\; b □ d$ |                             |
+* COMMENT More Basic Tactics
 
-# \hfill{\color{grey}(7.9)
++ If we have access to some ~H : ∀ 𝓍, A₁ → … Aₙ → G~ where ~G~, 
+  up to substitution, is exactly
+  the current goal, then ~apply f~ introduces ~n~ many new subgoals
+  that need to then be tackled and variables ~𝓍~ are inferred.
+  ( "Modus Ponens"! )
 
-#+BEGIN_EXPORT latex
-{\small \textbf{Duality Principle:} \\
-If a statement $S$ is a theorem, then so is
-$S[(\sqleq, \meet, \join, \top, \bot) := (⊒, \join, \meet, \bot, \top)]$}.
-#+END_EXPORT
+  - When a variable cannot be inferred we must give it explicitly: ~apply H with (xᵢ := ⋯).~
+  - ~apply~ will perform simplification first, if needed.
 
++ ~symmetry~ switches the left and right sides of an equality in
+    the goal.
 
++ The constructors of inductively defined types are injective and disjoint.
+  These principles are invoked by the tactic ~inversion H~, where ~H~ denotes an
+  equality involving constructors as main application.
+  For same constructors this acts as injectivity, generating all equations 
+  resulting from ~H~ and rewriting the goal along them. 
+  For distinct constructors, it produces no goals: What you have is impossible,
+  ergo a contradiction whence anything follows.
+ 
+   - We can name the equations that ~inversion~ generates with an
+    ~as ...~.
+
++ This is useful theorem, not a tactic:
+  ~f_equal : ∀ (A B : Type) (f: A -> B) (x y: A), x = y -> f x = f y~
+
++ Using Tactics on Hypotheses:
+  By default, most tactics work on the goal and leave the context unchanged.
+  However, most tactics also have a variant that performs a similar operation
+  on a statement in the context: ~t in H~ performs tactic ~t~ only on ~H~ thereby
+  altering only ~H~.
+
+*With induction, don't introduce things unless you have to!*
+What we can do instead is to first introduce all the quantified
+    variables and then _re-generalize_ one or more of them,
+    selectively taking variables out of the context and putting them
+    back at the beginning of the goal.  The [generalize dependent m]
+    tactic does this.
+
+* COMMENT WOAH :: new stuff follows
+
+\columnbreak
 
 * COMMENT footer
 
