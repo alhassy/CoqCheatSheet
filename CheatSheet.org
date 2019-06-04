@@ -1,28 +1,123 @@
-#+INCLUDE: CheatSheet/CheatSheetSetup.org
+# C-c C-e l o ;-)
 
-* title                                                              :ignore:
+#+INCLUDE: CheatSheet/CheatSheetSetup.org
 #+TITLE: Beginning Coq Reference Sheet
 # SUBTITLE: Cheat Sheet Template
-# DATE: << Spring 2018 >>
-# When we don't provide a date, one is provided for us.
 #+AUTHOR: [[http://www.cas.mcmaster.ca/~alhassm/][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
-#+DESCRIPTION: This document is written by Musa Al-hassy for his learning in the spring of 2018.
+#+DESCRIPTION: This document is written by Musa Al-hassy for his learning in the spring of 2019.
 #+STARTUP: hideblocks
 #+STARTUP: overview
-#+TODO: { TEMPLATE(t) BEGIN-IGNORE(b) END-IGNORE(e) } | DONE(d)
+#+TODO: Todo | spacing Emacs LaTeX
+
+* Emacs COMMENT Setup
+[[https://proofgeneral.github.io/][Proof General]] is a generic Emacs interface for interactive proof assistants ---predominately [[https://coq.inria.fr/][Coq]].
+We use [[https://github.com/cpitclaudel/company-coq][company-coq]] code completion ---that link has many screenshots and gifs ;-)
+Execute ~M-x company-coq-tutorial~ to see what it does; including on the fly documentation for identifiers with source definitions,
+prettification of operators, auto-completion of identifiers and module names, jumping to definitions, and proof folding.
+# ; namely, [[https://coq.inria.fr/][Coq]], [[http://www.easycrypt.info/][EasyCrypt]], and [[http://www.lama.univ-savoie.fr/pagesmembres/raffalli/phox.html][PhoX]].
+# It used to support many other proof assistants as well, including HOL-Light, Isabelle, and LEGO.
+#+BEGIN_SRC emacs-lisp
+;; Install Coq from here: https://coq.inria.fr/opam-using.html
+;; More easily: brew install coq
+;; Either way ensure: $ coqc --version  ⇒  8.9.1
+
+;; Now add it to Emacs' path; obtained by invoking: which coqtop
+(add-to-list 'exec-path "/Users/musa/opam-coq.8.9.1/ocaml-base-compiler.4.02.3/bin/")
+;; Alternatively: (setq coq-prog-name "PATH/TO/coqtop")
+
+(use-package proof-general :demand t)
+
+;; Let's also obtain code completion.
+(use-package company-coq :demand t)
+;; Load company-coq when opening Coq files
+(add-hook 'coq-mode-hook #'company-coq-mode)
+
+;; When working literately with Coq, I've found this to be nice.
+(setq org-src-window-setup 'split-window-below)
+  ;; (setq org-src-window-setup 'reorganize-frame) ;; default
+
+;; Ensure goals and proof checking responses have dedicated buffers.
+;; t ⇒ takes up the entire screen for a total of 3 buffers.
+(setq proof-three-window-enable t)
+#+END_SRC
+
++ Files ending in the appropriate extension, or invoking the prover's mode, will automatically enable Proof General.
++ Besides the new menu bar, press ~C-h m~ to obtain more help about Proof General.
+
+  In a Coq script, press ~C-c C-RETURN~ to have the script up to the current point
+  evaluated ---Proof General will colour that portion blue.
+  - For literate programming with Org-mode, press ~C-c '~ on a src block first,
+    check the proof, then ~C-c '~ to return to literate fashion.
+
+\room
+To prove a theorem in Coq, you state the theorem, provide tactics that reduce it to a number
+of sub-goals, then recurse on each sub-goal until there are no more.
+
+* LaTeX Setup                                                :ignore:
+# Can be obtained from: https://github.com/alhassy/MyUnicodeSymbols
+#
+#+LATEX_HEADER: \usepackage{/Users/musa/MyUnicodeSymbols/MyUnicodeSymbols}
+
+#+NAME: parallel enviro
+#+BEGIN_EXPORT latex
+% \setlength{\columnseprule}{2pt}
+
+\renewenvironment{parallel}[1][2] % one argument, whose default value is literal `2`.
+ {
+  \setlength{\columnseprule}{2pt}
+  \begin{minipage}[t]{\linewidth} % width of minipage is 100% times of \linewidth
+  \begin{multicols}{#1}  % default is `2`
+ }
+ {
+ \setlength{\columnseprule}{0pt}
+  \end{multicols}
+  \end{minipage}
+ }
+#+END_EXPORT
+
+# Removing the red box that appears in "minted" when using unicode.
+# Src: https://tex.stackexchange.com/questions/343494/minted-red-box-around-greek-characters
+#
+#+LATEX_HEADER: \makeatletter
+#+LATEX_HEADER: \AtBeginEnvironment{minted}{\dontdofcolorbox}
+#+LATEX_HEADER: \def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+#+LATEX_HEADER: \makeatother
+* COMMENT Random matter
++ Coq commands are always terminated with a period, as in Prolog.
+
+#+BEGIN_SRC coq  coq
+Eval compute in
+    let f := fun x => (x * 3, x) in f 3.
+
+(* = (9, 3) : nat * nat  *)
+#+END_SRC
+
+We can define new constants by using ~Definition~:
+---note that $f_1, \lambda, \Rightarrow$ are prettified versions of ~f1, fun, =>~.
+#+BEGIN_SRC coq  coq
+Definition f1 := fun x : nat => x + 1.
+
+Definition f2 x := x * x.
+#+END_SRC
+
+Check the type of an expression, /without/ evaluating it, using ~Check~:
+#+BEGIN_SRC coq  coq
+Check le_S 2 5.
+(* le_ S 2 5 : 2 <= 5 -> 2 <= 6 *)
+#+END_SRC
 
 * Administrivia, Syntax
 
 + Every Coq command ends with a period.
 + The phrase /Theorem T identifying statement S is proven by P/
   is formalised as
-  #+BEGIN_SRC 
+  #+BEGIN_SRC coq
   Theorem T : S.  (* T is only a name and can be used later. *)
   Proof.
-  P  (* See the current state of the proof in the CoqIde by clicking, in the toolbar, 
-        on the green arrow pointing at a yellow ball;
-        or do "C-c C-Enter" in Proof General with Emacs. *)
+  P  (* See the current state of the proof in the CoqIde by clicking, in the toolbar,
+	on the green arrow pointing at a yellow ball;
+	or do "C-c C-Enter" in Proof General with Emacs. *)
   Qed.
   #+END_SRC
 
@@ -48,7 +143,7 @@
 
     # It ends a subgoal without solving it. I use it below to let Coq's parser bypass this unproven theorem.
     # The "admit" tactic has its uses, though. When there are multiple subgoals and you want to skip over the easy ones to work on the hard one first, the "admit" tactic can be used to get the easy subgoals out of the way. Or, if you are only part way done a proof but you want send someone a Coq file that parses, "admit" can be used to fill in your blanks.
-    # 
+    #
     - Useful if you have a subgoal that you want to ignore for a while.
 
 + ~Abort~, in-place of ~Qed~, is used to give up on a proof for the moment,
@@ -69,9 +164,9 @@
     ~x~ for a proof of ~X~ which then follows, and is conventionally indented.
 
 + Imports :: Loading definitions from a library,
-   #+BEGIN_EXAMPLE
+   #+BEGIN_SRC coq
 Require Import Bool.
-#+END_EXAMPLE
+#+END_SRC
 
 \iffalse
 + Pattern matching with ~case~ ::
@@ -85,9 +180,9 @@ Require Import Bool.
 The "case" tactic only changes the subgoal.
 Hence whether it is invoked before all possible intros or not gives different
 proof power. For example, try proving:
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC coq
 Theorem thm_eqb_a_t: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)).
-#+END_EXAMPLE
+#+END_SRC
 \fi
 
 * Pattern matching with ~destruct~
@@ -121,8 +216,8 @@ could have produced ~e~ such that the /i/-th constructor has arguments ~ai0, …
 + ~exact~ :: If the subgoal matches an /exact/ hypothesis,
      Then use ~exact <hyp_name>.~
 
-+ ~simpl~ :: 
-  #  ~simpl~. It is short for ~simplify~. 
++ ~simpl~ ::
+  #  ~simpl~. It is short for ~simplify~.
   If the current subgoal contains a function call with all its arguments, ~simpl~ will execute the function on the arguments.
 
   - Sometimes a call to ~unfold f~, for a particular function ~f~, is needed before ~simpl~ will work.
@@ -131,9 +226,9 @@ could have produced ~e~ such that the /i/-th constructor has arguments ~ai0, …
   then ~imp a~ is of type ~B~. This also works if the ~imp~ contains ~forall~'s.
 
 + Local tactic application :: ~t in s~ performs the tactic ~t~ only within
-     the hypothesis, term, ~s~. For example, ~unfold defnName in item~ performs a local rewrite.   
+     the hypothesis, term, ~s~. For example, ~unfold defnName in item~ performs a local rewrite.
 
-* ~intros~ tactic: `∀, ⇒` introduction
+* ~intros~ tactic: ‘∀, ⇒’ introduction
 
 + To prove a statement of the form ~(forall A : Prop, Q)~ we use the ∀-introduction
   tactic, supplied with a name for the variable introduced, as in ~intros A.~
@@ -150,16 +245,16 @@ could have produced ~e~ such that the /i/-th constructor has arguments ~ai0, …
   # introduce the Props and the derived values separately.
 * ~Notation~, ~Definition~, and the tactics ~fold~ and ~unfold~
 
-~Definition~ is a vernacular command that says two expressions are interchangeable. 
+~Definition~ is a vernacular command that says two expressions are interchangeable.
 Below ~(not A)~ and ~A -> False~ are declared interchangeable.
 
-#+BEGIN_EXAMPLE 
+#+BEGIN_SRC coq
 Definition not (A:Prop) := A -> False.
 
 Notation "~ x" := (not x) : type_scope.
-#+END_EXAMPLE
+#+END_SRC
 
-Tactics ~unfold defnName~ and ~fold defnName~ will interchange them. 
+Tactics ~unfold defnName~ and ~fold defnName~ will interchange them.
 
 ~Notation~ creates an operator and defines it as an alternate notation for an expression.
 
@@ -167,23 +262,22 @@ Tactics ~unfold defnName~ and ~fold defnName~ will interchange them.
 
 # (The ~Notation~ command is how the operator ~->~ was created from ~(forall ...)~.)
 
-**fix me**
-#+BEGIN_EXAMPLE coq
+#+BEGIN_SRC coq  coq
 (* If this is a recursive function, use `Fixpoint` in-place of `Definition`.*)
-Definition my_function (a₀ : A₀) ⋯ (aₙ : Aₙ) : B :=
-  match a₀ , …,  aₙ with
-  | C₀ p₀ … pₘ , …, Cₙ q₀ ⋯ qₖ =>  definition_here_for_these_constructors_Cᵢ
+Definition my_function (a0 : A0) ⋯ (a99 : A99) : B :=
+  match a0 , …,  a99 with
+  | C₀ p₀ … p_n, …, C_k q₀ ⋯ q_m =>  definition_here_for_these_constructors_Cᵢ
   ⋮
   end.
-#+END_EXAMPLE
+#+END_SRC
 
-+ Telescoping :: If ~x₀, ⋯, xₙ~ have the same type, say ~T~,
-		 we may declare their typing by ~(x₀ ⋯ xₙ : T)~.
++ Telescoping :: If ~x₀, ⋯, x_n~ have the same type, say ~T~,
+		 we may declare their typing by ~(x₀ ⋯ x_n : T)~.
 + Notation :: Before the final ".", we may include a variant of
    ~where "n + m" := (my_function n m) : B_scope.~ for introducing
    an operator immediately with a function definition.
 
-* COMMENT Proof Refinement
+* Todo COMMENT Proof Refinement
 
 Suppose our goal is to prove B but we have a proof ~imp : A → B~,
 then if we have an ~A~ function application suffices. However,
@@ -198,7 +292,7 @@ a subgoal ~A~. It is good practice to then indent proof for the new subgoal.
 + Needless to say, a ~refine~ may occur within a ~refine~.
 
 \iffalse
-#+BEGIN_SRC 
+#+BEGIN_SRC coq
 Theorem nexted_refine_example : (forall A B C : Prop, A -> (A->B) -> (A->B->C) -> C).
 Proof.
   intros A B C.
@@ -217,54 +311,53 @@ Qed.
 #+END_SRC
 \fi
 
-
-* newpage :ignore:
+* spacing newpage                                                    :ignore:
 
 \newpage
 
 * Examples of Common Datatypes
 
 + ~Prop~ Type
-  - A ~Prop~ either has a proof or it does not have a proof. 
-  - Coq restricts Prop to being either proven or unproven, rather than true or false.   
+  - A ~Prop~ either has a proof or it does not have a proof.
+  - Coq restricts Prop to being either proven or unproven, rather than true or false.
 
 + Sums
-   #+BEGIN_EXAMPLE
+   #+BEGIN_SRC coq
 Inductive or (A B:Prop) : Prop :=
   | or_introl : A -> A \/ B
   | or_intror : B -> A \/ B
 where "A \/ B" := (or A B) : type_scope.
-#+END_EXAMPLE
+#+END_SRC
 
 + Products
-  #+BEGIN_EXAMPLE
+  #+BEGIN_SRC coq
 Inductive and (A B:Prop) : Prop :=
   conj : A -> B -> A /\ B
 where "A /\ B" := (and A B) : type_scope.
-#+END_EXAMPLE
+#+END_SRC
 
 + ℕaturals
-  #+BEGIN_EXAMPLE
+  #+BEGIN_SRC coq
 Inductive nat : Set :=
   | O : nat   (* Capital-letter O, not the number zero. *)
   | S : nat -> nat.
-#+END_EXAMPLE
+#+END_SRC
 
 + Options
-  #+BEGIN_EXAMPLE 
+  #+BEGIN_SRC coq
 Inductive option (A : Type) : Type :=
   | Some : A -> option A
   | None : option .A
-#+END_EXAMPLE
+#+END_SRC
 
 + Lists
-  #+BEGIN_EXAMPLE
+  #+BEGIN_SRC coq
 Inductive list (A : Type) : Type :=
  | nil : list A
  | cons : A -> list A -> list A.
 
 Infix "::" := cons (at level 60, right associativity) : list_scope.
-#+END_EXAMPLE
+#+END_SRC
 
 * ~True, False, true, false~
 
@@ -274,7 +367,7 @@ The vernacular command ~Inductive~ lets you create a new type.
 + The top Prop, having a single proof named ~I~, is ~True~.
 + The ~bool~ type has two values: ~true~ and ~false~.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC coq
 Inductive False : Prop := .
 
 Inductive True : Prop :=
@@ -283,15 +376,15 @@ Inductive True : Prop :=
 Inductive bool : Set :=
   | true : bool
   | false : bool.
-#+END_EXAMPLE
+#+END_SRC
 
 \iffalse principle of explosion
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC coq
 Theorem ex_falso_quod_libet : (forall A : Prop, False -> A).
 Proof.
   intros A []
 Qed.
-#+END_EXAMPLE
+#+END_SRC
 # Instead of "exact", we use the "case" tactic. "case" is powerful: it creates subgoals for every possible construction of its argument. Since there is no way to construct a False, "case" creates no subgoals! Without a subgoal, we're done!
 \fi
 
@@ -300,7 +393,7 @@ into their associated Prop counterparts.
 * Existence ∃
 
 # The mathematical /∃ x : X • P x/ is captured by ~ex P~ for ~P : X -> Prop~.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC coq
 Inductive ex (A:Type) (P:A -> Prop) : Prop :=
   ex_intro : forall x:A, P x -> ex (A:=A) P.
 
@@ -308,7 +401,7 @@ Notation "'exists' x .. y , p" := (ex (fun x => .. (ex (fun y => p)) ..))
   (at level 200, x binder, right associativity,
    format "'[' 'exists'  '/  ' x  ..  y ,  '/  ' p ']'")
   : type_scope.
-#+END_EXAMPLE
+#+END_SRC
 
 Note that the constructor takes 3 arguments: The predicate ~P~, the witness ~x~, and a proof of ~P x~.
 
@@ -317,7 +410,7 @@ the current goal and the new subgoal is the proof that the witness satisfies the
 
 \iffalse
 Note that De Morgan's law, ¬∀≈∃¬, holds! Prove an implication to see this.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC coq
 Theorem demorgan : (forall P : Set->Prop, (forall x, ~(P x)) -> ~(exists x, P x)).
 Proof.
   intros P.
@@ -329,26 +422,24 @@ Proof.
   pose (absurd := uhoh proof).
   case absurd.
 Qed.
-#+END_EXAMPLE
+#+END_SRC
 The converse is also true!
 \fi
-
-
 
 * Equality, ~rewrite~, and ~reflexivity~
 
 Two operators,
-+ ~x = y :> A~ says that ~x~ and ~y~ are equal and both have type ~A~. 
++ ~x = y :> A~ says that ~x~ and ~y~ are equal and both have type ~A~.
 + ~x = y~ does the same but let's Coq infer the type ~A~.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC coq  coq
 Inductive eq (A:Type) (x:A) : A -> Prop :=
     eq_refl : x = x :>A
 
 where "x = y :> A" := (@eq A x y) : type_scope.
 
 Notation "x = y" := (x = y :>_) : type_scope.
-#+END_EXAMPLE
+#+END_SRC
 
 \iffalse
 
@@ -358,7 +449,7 @@ The only way to create a proof of type "eq" is to use the only constructor "eq_r
 
 \fi
 
-Rather than using ~destruct~, most proofs using equality use the tactics ~rewrite ⟨orientation⟩.~ 
+Rather than using ~destruct~, most proofs using equality use the tactics ~rewrite ⟨orientation⟩.~
 If ~xEy~ has type ~x = y~, then ~rewrite -> xEy~ will replace ~x~ with ~y~ in the subgoal, while using orientation ~<-~ rewrites the
 other-way, replacing ~y~ with ~x~.
   #
@@ -395,10 +486,10 @@ Use the ~reflexivity~ tactic to discharge a goal of type ~x = x~.
 * Discrepancy
 
 Coq uses the operator ~<>~ for inequality, which really means /equality is unprovable/ or /equality implies False/.
-#+BEGIN_EXAMPLE coq
+#+BEGIN_SRC coq  coq
 Notation "x <> y  :> T" := (~ x = y :>T) : type_scope.
 Notation "x <> y" := (x <> y :>_) : type_scope.
-#+END_EXAMPLE
+#+END_SRC
 
 ** discriminate                                                      :ignore:
 
@@ -409,23 +500,47 @@ current goal, thereby eliminating a case that could not have happened.
 \iffalse
 ~discriminate~ operates on a hypothesis where values of inductive type are compared using equality. If the constructors used to generate the equality type are different, like here where we have ~true = false~, then Coq knows that situation can never happen. It's like a proof of ~False~. In that case, ~discriminate <hypname>.~ ends the subgoal.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC coq
 Theorem example  : forall A, true = false -> A.
 Proof.
   intros A tEf.
   discriminate tEf.
 Qed.
-#+END_EXAMPLE
+#+END_SRC
 
 When working with inductive types, you will use "discriminate" to eliminate a lot of cases that can never happen.
 
 RULE: If you have a hypothesis "<name> : (<constructor1> ...) = (<constructor2> ...) OR "<name> : <constant1> = <constant2> Then use the tactic "discriminate <name>"
 \fi
 
+* Searching for Existing Proofs
++ Searching for utility functions, proofs, that involve a particular identifier by using ~Search~.
++ In contrast, ~SearchPattern~ takes a pattern with holes ‘_’ for expressions.
++ Finally, ~SearchRewrite~ only looks for proofs whose conclusion in an equality involving the given pattern.
+#+BEGIN_SRC coq
+Search le.
+(* le_n: forall n : nat, n <= n *)
+(* le_0_n: forall n : nat, 0 <= n *)
+(* min_l: forall n m : nat, n <= m -> Nat.min n m = n *)
+(* and many more *)
 
-* COMMENT More Basic Tactics
+(* Let's load some terribly useful arithmetic proofs. *)
+Require Import Arith Omega.
 
-+ If we have access to some ~H : ∀ 𝓍, A₁ → … Aₙ → G~ where ~G~, 
+SearchPattern (_+_ <= _+_).
+(* plus_le_compat_r: forall n m p : nat, n <= m -> n + p <= m + p *)
+(* Nat.add_le_mono: forall n m p q : nat, n <= m -> p <= q -> n + p <= m + q *)
+(* etc. *)
+
+SearchRewrite (_ + (_ - _)).
+(* le_plus_minus: forall n m : nat, n <= m -> m = n + (m - n) *)
+(* le_plus_minus_r: forall n m : nat, n <= m -> n + (m - n) = m *)
+(* Nat.add_sub_assoc: forall n m p : nat, p <= m -> n + (m - p) = n + m - p *)
+#+END_SRC
+
+* Todo COMMENT More Basic Tactics
+
++ If we have access to some ~H : ∀ 𝓍, A₁ → … Aₙ → G~ where ~G~,
   up to substitution, is exactly
   the current goal, then ~apply f~ introduces ~n~ many new subgoals
   that need to then be tackled and variables ~𝓍~ are inferred.
@@ -440,11 +555,11 @@ RULE: If you have a hypothesis "<name> : (<constructor1> ...) = (<constructor2> 
 + The constructors of inductively defined types are injective and disjoint.
   These principles are invoked by the tactic ~inversion H~, where ~H~ denotes an
   equality involving constructors as main application.
-  For same constructors this acts as injectivity, generating all equations 
-  resulting from ~H~ and rewriting the goal along them. 
+  For same constructors this acts as injectivity, generating all equations
+  resulting from ~H~ and rewriting the goal along them.
   For distinct constructors, it produces no goals: What you have is impossible,
   ergo a contradiction whence anything follows.
- 
+
    - We can name the equations that ~inversion~ generates with an
     ~as ...~.
 
@@ -464,34 +579,9 @@ What we can do instead is to first introduce all the quantified
     back at the beginning of the goal.  The [generalize dependent m]
     tactic does this.
 
-* COMMENT WOAH :: new stuff follows
-
-\columnbreak
-
 * COMMENT footer
 
-Here is a tiny tweak for org-mode. If you add the following option to your emacs config file
-
-(setq org-highlight-latex-and-related '(latex))
-
-Then inline latex like $y=mx+c$ will appear in a different colour in an org-mode file to help it stand out.
-( See below! )
-
-eval: (setq NAME (buffer-name))
-compile-command: (progn (org-latex-export-to-pdf) (eshell-command (concat "evince " NAME ".pdf &")))
-
 # Local Variables:
-# eval: (setq NAME (file-name-sans-extension buffer-file-name))
-# eval: (setq org-highlight-latex-and-related '(latex))
 # eval: (visual-line-mode t)
-# eval: (require 'ox-extra)
-# eval: (ox-extras-activate '(ignore-headlines))
-# eval: (make-variable-buffer-local 'org-structure-template-alist)
-# eval: (setq PARALLEL (concat "# \n#+begin_parallel latex \n?\n#+end_parallel"))
-# eval: (add-to-list 'org-structure-template-alist `("p" ,PARALLEL))
-# eval: (setq TEMPLATE (concat "#+NAME: ?\n#+BEGIN_SRC c :tangle sheet_code.c\n?\n#+END_SRC"))
-# eval: (add-to-list 'org-structure-template-alist `("s" ,TEMPLATE))
-# compile-command: (progn (org-latex-export-to-pdf) (eshell-command (concat "evince " (file-name-sans-extension buffer-file-name) ".pdf &")))
-# org-latex-inputenc-alist: (("utf8" . "utf8x"))
-# eval: (setq org-latex-default-packages-alist (cons '("mathletters" "ucs" nil) org-latex-default-packages-alist))
+# compile-command: (progn (org-latex-export-to-pdf) (eshell-command (concat "open " (file-name-sans-extension buffer-file-name) ".pdf &")))
 # End:
