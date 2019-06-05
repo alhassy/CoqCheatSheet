@@ -3,7 +3,9 @@
 #+INCLUDE: CheatSheet/CheatSheetSetup.org
 #+TITLE: Beginning Coq Reference Sheet
 # SUBTITLE: Cheat Sheet Template
-#+AUTHOR: [[http://www.cas.mcmaster.ca/~alhassm/][Musa Al-hassy]]
+#+MACRO: URL https://github.com/alhassy/CoqCheatSheet
+#+MACRO: ShowURL @@latex:{\tiny\hspace{6em}\url{ {{{URL}}} } }@@
+#+AUTHOR: [[http://www.cas.mcmaster.ca/~alhassm/][Musa Al-hassy]] {{{ShowURL}}}
 #+EMAIL: alhassy@gmail.com
 #+DESCRIPTION: This document is written by Musa Al-hassy for his learning in the spring of 2019.
 #+STARTUP: hideblocks
@@ -42,17 +44,22 @@ prettification of operators, auto-completion of identifiers and module names, ju
 (setq proof-three-window-enable t)
 #+END_SRC
 
+#+RESULTS:
+: t
+
 + Files ending in the appropriate extension, or invoking the prover's mode, will automatically enable Proof General.
 + Besides the new menu bar, press ~C-h m~ to obtain more help about Proof General.
 
   In a Coq script, press ~C-c C-RETURN~ to have the script up to the current point
   evaluated ---Proof General will colour that portion blue.
+  - ~C-c C-n~ to step through a script.
   - For literate programming with Org-mode, press ~C-c '~ on a src block first,
     check the proof, then ~C-c '~ to return to literate fashion.
 
 \room
 To prove a theorem in Coq, you state the theorem, provide tactics that reduce it to a number
 of sub-goals, then recurse on each sub-goal until there are no more.
+Many, if not all subgoals, are simple enough to be discharged with automation.
 
 * LaTeX Setup                                                :ignore:
 # Can be obtained from: https://github.com/alhassy/MyUnicodeSymbols
@@ -107,6 +114,38 @@ Check le_S 2 5.
 (* le_ S 2 5 : 2 <= 5 -> 2 <= 6 *)
 #+END_SRC
 
+* Example Proof
+
+  #+begin_src coq
+  (* “for all things you could prove, *)
+  (*    if you have a proof of it, then you have a proof of it.” *)
+  Theorem my_first_proof : (forall A : Prop, A -> A).
+  Proof.
+    intros A.
+    intros proof_of_A.
+    exact proof_of_A.
+    (* Press C-c C-Enter after the next command to see what the proof *)
+    (* would look like in a declarative fashion; i.e., without tactics in λ-calculus. *)
+    Show Proof.
+    (* Earlier in the proof, this commands shows a partial λ-term. *)
+  Qed.
+  #+end_src
+
+  + As you can see, *every* Coq command ends with a period.
+
+  + ~Prop~ is the type of /propositions/: The type of things which could have a proof.
+
+  + Coq uses 3 ‘languages’:
+    0. /Vernacular/: The top-level commands that begin with a capital letter.
+    1. /Tactics/: Lower-case commands that form the proof; ‘proof strategies’.
+    2. /Terms/: The expressions of what we want to prove; e.g., ~forall, Prop, ->~.
+
+    This is unsurprising since [[https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.html#org6c659c0][a language has many tongues]].
+
+  + /Proofs and functions are the same thing!/
+    - We can view what we call a proof as function by using ~Show Proof~, as above.
+    - We can write functions directly or use [proof] tactics to write functions!
+
 * Administrivia, Syntax
 
 + Every Coq command ends with a period.
@@ -123,7 +162,7 @@ Check le_S 2 5.
 
 + Instead of ~Theorem~, you may also see proofs that start with
   ~Example~, ~Lemma~, ~Remark~, ~Fact~, ~Corollary~, and ~Proposition~, which all
-  mean the _SAME_ thing. This difference is mostly a matter of style.
+  mean the same thing. This difference is mostly a matter of style.
 
 + The command ~Admitted~, in-place of ~Qed~, can be used as a placeholder for an
     incomplete proof or definition.
@@ -185,6 +224,75 @@ Theorem thm_eqb_a_t: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)).
 #+END_SRC
 \fi
 
+* ~intros~ Tactic: ‘∀, ⇒’ Introduction
+
+  # + To prove a statement of the form ~(forall A : Prop, Q)~ we use the ∀-introduction
+  # tactic, supplied with a name for the variable introduced, as in ~intros A.~
+
+  + To prove /∀ x, Px/: “Let /x/ be arbitrary, now we aim to prove /Px/.”
+  + This strategy is achieved by the ~intros x~ tactic.
+  + To prove ~∀ x0 x1 ... xN, Pxs~ use ~intros x0 x1 ... xN~ to obtain the subgoal ~Pxs~.
+    - Using just ~“intros.”~ is the same as ~intros H H0 H1 ... HN-1.~ ---‘H’ for hypothesis.
+    - Prop names are introduced with the name declared;
+      e.g., ~“intros.”~ for ~“∀ A : Prop, Px”~
+      uses the name ~A~ automatically.
+  + Note: ~(A → B) = (∀ a:A, B)~ and so ~intros~ works for ‘→’ as well.
+  + ~Show Proof~ will desugar ~intros~ into argument declarations of a function.
+
+* ~exact~ Tactic
+
+  + If the goal matches a hypothesis ~H~ /exactly/, then use tactic ~exact H~.
+  + ~Show Proof~ desugars ~exact H~ into ~H~, which acts as the result of the
+    currently defined function.
+
+* Tactics ~refine~ & ~pose~ [local declarations]
+
+  If the current goal is $C$ and you have a proof $p : A_0 \to \cdots \to A_n \to C$,
+  then ~refine (p _ _ ... _)~ introduces $n$ possibly simpler subgoals corresponding to
+  the arguments of ~p~.
+
+  + This is useful when the arguments may be difficult to prove.
+  + If we happen to have a proof of any $A_i$, then we may use it instead of an ‘_’.
+  + Any one of the underscores could itself be ~(q _ ... _)~ if we for some proof ~q~.
+
+  :Exercise:
+  *Exercise:*
+  Prove the ‘modus ponens’ proposition in three ways.
+  #+begin_src coq
+  Theorem refine_with_one_subgoal : forall A B : Prop, A -> (A -> B) -> B. Abort.
+
+  Theorem using_only_exact : forall A B : Prop, A -> (A -> B) -> B. Abort.
+
+  Theorem refine_with_no_subgoals : forall A B : Prop, A -> (A -> B) -> B. Abort.
+  #+end_src
+
+  Likewise, prove $∀ A B C,  A → (A → B) → (B → C) → C$ in three such ways.
+  :End:
+
+  In contrast, you could declare proofs $p_i$ for each $A_i$, the arguments of ~p~, first
+  /then/ simply invoke ~exact (p p0 p1 ... pN)~. To do this, use the ~pose~ tactic for forming
+  local declarations: ~pose (res := definition_of_p_i)~. The parentheses are important.
+  + ~Show Proof~ desugars ~pose~ into ~let...in...~ declarations.
+
+  :Exercise:
+  *Exercise:*
+  Reprove the above without using ~refine~, by using ~pose~ instead.
+  :End:
+
+* Simple Tactics
+
++ ~simpl~ ::
+  #  ~simpl~. It is short for ~simplify~.
+  If the current subgoal contains a function call with all its arguments, ~simpl~ will execute the function on the arguments.
+
+  - Sometimes a call to ~unfold f~, for a particular function ~f~, is needed before ~simpl~ will work.
+
++ Modus ponens, or function application :: If we have ~imp : A -> B, a : A~
+  then ~imp a~ is of type ~B~. This also works if the ~imp~ contains ~forall~'s.
+
++ Local tactic application :: ~t in s~ performs the tactic ~t~ only within
+     the hypothesis, term, ~s~. For example, ~unfold defnName in item~ performs a local rewrite.
+
 * Pattern matching with ~destruct~
 
 We case on value ~e~ by ~destruct e as [ a00 … am0 | ⋯ | a0n … amn ]~,
@@ -211,38 +319,6 @@ could have produced ~e~ such that the /i/-th constructor has arguments ~ai0, …
 
 + If there are no arguments to name, in the case of a nullary construction, we can just write ~[]~.
 
-* Simple Tactics
-
-+ ~exact~ :: If the subgoal matches an /exact/ hypothesis,
-     Then use ~exact <hyp_name>.~
-
-+ ~simpl~ ::
-  #  ~simpl~. It is short for ~simplify~.
-  If the current subgoal contains a function call with all its arguments, ~simpl~ will execute the function on the arguments.
-
-  - Sometimes a call to ~unfold f~, for a particular function ~f~, is needed before ~simpl~ will work.
-
-+ Modus ponens, or function application :: If we have ~imp : A -> B, a : A~
-  then ~imp a~ is of type ~B~. This also works if the ~imp~ contains ~forall~'s.
-
-+ Local tactic application :: ~t in s~ performs the tactic ~t~ only within
-     the hypothesis, term, ~s~. For example, ~unfold defnName in item~ performs a local rewrite.
-
-* ~intros~ tactic: ‘∀, ⇒’ introduction
-
-+ To prove a statement of the form ~(forall A : Prop, Q)~ we use the ∀-introduction
-  tactic, supplied with a name for the variable introduced, as in ~intros A.~
-
-+ To prove an implication ~A ⇒ B~ we again use, say, ~intros pf_of_A.~
-  # since implications are implicitly universally quantified:
-  # $A ⇒ B$ denotes $(forall pf_of_A : B, C)$.
-
-+ The ~intros~ command can take any positive number of
-  arguments, each argument stripping a ~forall,~ (or ~->~), off the front of
-  the current subgoal.
-  # We can combined all
-  # the ~intros~ into a single command, but it is cleaner to
-  # introduce the Props and the derived values separately.
 * ~Notation~, ~Definition~, and the tactics ~fold~ and ~unfold~
 
 ~Definition~ is a vernacular command that says two expressions are interchangeable.
@@ -579,9 +655,40 @@ What we can do instead is to first introduce all the quantified
     back at the beginning of the goal.  The [generalize dependent m]
     tactic does this.
 
+
+* COMMENT Making README.md
+
+C-c C-c: Evaluate src block.
+
+#+NAME: make-readme
+#+BEGIN_SRC elisp :results none
+(with-temp-buffer
+    (insert
+    "#+EXPORT_FILE_NAME: README.md
+     ,#+HTML: <h1> CoqCheatSheet </h1>
+     ,#+OPTIONS: toc:nil d:nil
+     # Toc is displayed below at a strategic position.
+
+     This project is to contain a listing of common facts for working with the Coq language.
+
+     ,*The listing sheet, as PDF, can be found
+     [here]({{{URL}}}/blob/master/CheatSheet.pdf)*,
+     while below is an unruly html rendition.
+
+     This reference sheet is built around the system
+     https://github.com/alhassy/CheatSheet.
+
+     ,#+TOC: headlines 2
+     ,#+INCLUDE: CheatSheet.org
+    ")
+    (org-mode)
+    (org-md-export-to-markdown)
+)
+#+END_SRC
 * COMMENT footer
 
 # Local Variables:
 # eval: (visual-line-mode t)
+# eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
 # compile-command: (progn (org-latex-export-to-pdf) (eshell-command (concat "open " (file-name-sans-extension buffer-file-name) ".pdf &")))
 # End:
