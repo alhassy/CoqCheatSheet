@@ -293,6 +293,12 @@ Theorem thm_eqb_a_t: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)).
 + Local tactic application :: ~t in s~ performs the tactic ~t~ only within
      the hypothesis, term, ~s~. For example, ~unfold defnName in item~ performs a local rewrite.
 
+* Todo COMMENT Algebraic Datatypes
+
+  The vernacular command ~Inductive~ lets us create new types.
+  + After a type, say, ~T~ is defined, we are automatically provided with
+    ~T_rect~ and ~T_ind~.
+
 * Pattern matching with ~destruct~
 
 We case on value ~e~ by ~destruct e as [ a00 … am0 | ⋯ | a0n … amn ]~,
@@ -387,7 +393,7 @@ Qed.
 #+END_SRC
 \fi
 
-* spacing newpage                                                    :ignore:
+* spacing COMMENT newpage                                                    :ignore:
 
 \newpage
 
