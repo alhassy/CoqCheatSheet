@@ -1,6 +1,5 @@
 # C-c C-e l o ;-)
 
-#+INCLUDE: CheatSheet/CheatSheetSetup.org
 #+TITLE: Beginning Coq Reference Sheet
 # SUBTITLE: Cheat Sheet Template
 #+MACRO: URL https://github.com/alhassy/CoqCheatSheet
@@ -11,6 +10,8 @@
 #+STARTUP: hideblocks
 #+STARTUP: overview
 #+TODO: Todo | spacing Emacs LaTeX
+#+OPTIONS: d:nil
+#+INCLUDE: CheatSheet/CheatSheetSetup.org
 
 * Emacs COMMENT Setup
 [[https://proofgeneral.github.io/][Proof General]] is a generic Emacs interface for interactive proof assistants ---predominately [[https://coq.inria.fr/][Coq]].
@@ -114,7 +115,7 @@ Check le_S 2 5.
 (* le_ S 2 5 : 2 <= 5 -> 2 <= 6 *)
 #+END_SRC
 
-* Example Proof
+* Example Proof :Maybe_prove_classic_demorgan_instead:
 
   #+begin_src coq
   (* “for all things you could prove, *)
@@ -164,6 +165,9 @@ Check le_S 2 5.
   ~Example~, ~Lemma~, ~Remark~, ~Fact~, ~Corollary~, and ~Proposition~, which all
   mean the same thing. This difference is mostly a matter of style.
 
++ A defined theorem is essentially a function and so it can be used with arguments,
+  in order to prove a result, as if it were a function.
+
 + The command ~Admitted~, in-place of ~Qed~, can be used as a placeholder for an
     incomplete proof or definition.
 
@@ -207,8 +211,12 @@ Check le_S 2 5.
 Require Import Bool.
 #+END_SRC
 
-\iffalse
-+ Pattern matching with ~case~ ::
++ Local tactic application :: ~t in s~ performs the tactic ~t~ only within
+     the hypothesis, term, ~s~. For example, ~unfold defnName in H~ performs a local rewrite
+     in hypothesis ~H~.
+     - By default, tactics apply to the current subgoal.
+
+* COMMENT Pattern matching with ~case~ ::
    # For an element ~xs~ of a type having /n/ constructors, ~case xs~ produces ~n~ subgoals of the form ~A₁ → ⋯ → Aₙᵢ → newSubgoal~ where the ~Aⱼ~ are the arguments of the constructor.
 
   If we do a ~case~ on an item of type ~A \/ B~ then we obtain two new subgoals:
@@ -222,7 +230,6 @@ proof power. For example, try proving:
 #+BEGIN_SRC coq
 Theorem thm_eqb_a_t: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)).
 #+END_SRC
-\fi
 
 * ~intros~ Tactic: ‘∀, ⇒’ Introduction
 
@@ -279,27 +286,42 @@ Theorem thm_eqb_a_t: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)).
   Reprove the above without using ~refine~, by using ~pose~ instead.
   :End:
 
-* Simple Tactics
+* Algebraic Datatypes ---~Inductive~ and ~case~
 
-+ ~simpl~ ::
-  #  ~simpl~. It is short for ~simplify~.
-  If the current subgoal contains a function call with all its arguments, ~simpl~ will execute the function on the arguments.
+‘forall’ and type construction allow us to regain many common datatypes, including
+∃, ∧, ∨, =, ~, ⊤, ⊥.
 
-  - Sometimes a call to ~unfold f~, for a particular function ~f~, is needed before ~simpl~ will work.
-
-+ Modus ponens, or function application :: If we have ~imp : A -> B, a : A~
-  then ~imp a~ is of type ~B~. This also works if the ~imp~ contains ~forall~'s.
-
-+ Local tactic application :: ~t in s~ performs the tactic ~t~ only within
-     the hypothesis, term, ~s~. For example, ~unfold defnName in item~ performs a local rewrite.
-
-* Todo COMMENT Algebraic Datatypes
+#+latex: \room
 
   The vernacular command ~Inductive~ lets us create new types.
   + After a type, say, ~T~ is defined, we are automatically provided with
-    ~T_rect~ and ~T_ind~.
+    an elimination rule ~T_rec~ and an induction principle ~T_ind~.
+  + Use ~“Check T_rec.”~ to view their types.
 
-* Pattern matching with ~destruct~
+  Tactic ~“case x.”~ creates subgoals for every possible way that ~x~ could have been
+  constructed ---where ideally ~x~ occurs in the goal.
+  + In particular, for empty type ~False~, it creates no new subgoals.
+  + If ~x~ occurs in some hypothesis of interest, then try performing the ~case~ /before/
+    introducing the hypothesis so that the case analysis propagates into it.
+  + ~case~ only changes the goal ---never the context.
+  + Whenever you use this tactic, indent and place ~- admit.~ for each possible case,
+    so that way you don't forget about them and the indentation make it clear which
+    tactics are associated with which subgoals.
+    - Tactic ~admit~ let's us ignore a goal for a while, but the proof is marked incomplete.
+  + If ~x~ is constructed from by ~cons a0 ... aN~, then the goal obtains
+    these arguments. It's thus very common to have ~“case H. intros.”~; in-fact it's so
+    common that this combination is packaged up as the ~destruct~ tactic.
+
+    ~case H. intros a0 ... aN.~  ≈  ~destruct H as [a0 ... aN]~.
+    - If no ~a_i~ are provided, the ~as~ clause may be omitted, and ~H~-ypothesis
+      names are generated.
+    - If the ~case~ provides multiple cases, then ~destruct~ won't work.
+
+  If the goal is a value of an ADT, use ~refine (name_of_constructor _ ... _)~
+  then build up the constituents one at a time.
+  - For example, to prove ~A ∧ B~, use ~refine (conj _ _).~
+
+* Todo COMMENT Pattern matching with ~destruct~
 
 We case on value ~e~ by ~destruct e as [ a00 … am0 | ⋯ | a0n … amn ]~,
 which gives us ~n~ new subgoals corresponding to the number of constructors that
@@ -325,6 +347,84 @@ could have produced ~e~ such that the /i/-th constructor has arguments ~ai0, …
 
 + If there are no arguments to name, in the case of a nullary construction, we can just write ~[]~.
 
+* Examples of Common Datatypes
+
++ ~Prop~ Type
+  - A ~Prop~ either has a proof or it does not have a proof.
+  - Coq restricts Prop to being either proven or unproven, rather than true or false.
+
++ ℕaturals
+  #+BEGIN_SRC coq
+Inductive nat : Set :=
+  | O : nat   (* Capital-letter O, not the number zero. *)
+  | S : nat -> nat.
+#+END_SRC
+
++ Options
+  #+BEGIN_SRC coq
+Inductive option (A : Type) : Type :=
+  | Some : A -> option A
+  | None : option A.
+#+END_SRC
+
++ Lists
+  #+BEGIN_SRC coq
+Inductive list (A : Type) : Type :=
+ | nil : list A
+ | cons : A -> list A -> list A.
+
+Infix "::" := cons (at level 60, right associativity) : list_scope.
+#+END_SRC
+
+* ~True, False, true, false~
+
++ The empty Prop, having no proofs, is ~False.~
++ The top Prop, having a single proof named ~I~, is ~True~.
++ The ~bool~ type has two values: ~true~ and ~false~.
+
+#+BEGIN_SRC coq
+Inductive False : Prop := .
+
+Inductive True : Prop :=
+  | I : True.
+
+(* ‘Set’ is the type of normal datatypes. *)
+Inductive bool : Set :=
+  | true : bool
+  | false : bool.
+
+(* From: Require Import Bool *)
+Definition eqb (p q : bool) : bool :=
+  match p, q with
+    | true, true => true
+    | true, false => false
+    | false, true => false
+    | false, false => true
+  end.
+#+END_SRC
+
+In the boolean library there is a function ~Is_true~ which converts booleans
+into their associated Prop counterparts.
+#+begin_src coq
+(* “Require Import” is the vernacular to load definitions from a library *)
+Require Import Bool.
+#+end_src
+
+:Exercises:
+*Exercises:*
+#+begin_src coq
+Theorem True_can_be_proven : True. Abort.
+#+end_src
+:End:
+*Exercises:*
+#+BEGIN_SRC coq
+Theorem two: not (Is_true(eqb false true)). Abort.
+Theorem same: forall a : bool, Is_true(eqb a a). Abort.
+Theorem ex_falso_quod_libet : (forall A : Prop, False -> A). Abort.
+Theorem use_case_carefully: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)). Abort.
+#+END_SRC
+# Instead of "exact", we use the "case" tactic. "case" is powerful: it creates subgoals for every possible construction of its argument. Since there is no way to construct a False, "case" creates no subgoals! Without a subgoal, we're done!
+:End:
 * ~Notation~, ~Definition~, and the tactics ~fold~ and ~unfold~
 
 ~Definition~ is a vernacular command that says two expressions are interchangeable.
@@ -336,13 +436,26 @@ Definition not (A:Prop) := A -> False.
 Notation "~ x" := (not x) : type_scope.
 #+END_SRC
 
-Tactics ~unfold defnName~ and ~fold defnName~ will interchange them.
++ A common proof technique is to ‘unfold’ a definition into familiar operators,
+    work with that, then ‘fold’ up the result using a definition.
 
-~Notation~ creates an operator and defines it as an alternate notation for an expression.
++ Tactics ~unfold defnName~ and ~fold defnName~ will interchange them.
 
-( Use ~intros~ when working with negations since they are implications! )
++ In Coq, we use the tactic ~unfold f~ to rewrite the goal using the definition of ~f~,
+      then use ~fold f~, if need be.
++ ~Notation~ creates an operator and defines it as an alternate notation for an expression.
++ ( Use ~intros~ when working with negations since they are implications! )
 
 # (The ~Notation~ command is how the operator ~->~ was created from ~(forall ...)~.)
+
+:Exercises:
+*Exercises:*
+Prove the following using unfold.
+#+begin_src coq
+Theorem False_cannot_be_proven : ~False. Abort.
+#+end_src
+
+:End:
 
 #+BEGIN_SRC coq  coq
 (* If this is a recursive function, use `Fixpoint` in-place of `Definition`.*)
@@ -358,6 +471,84 @@ Definition my_function (a0 : A0) ⋯ (a99 : A99) : B :=
 + Notation :: Before the final ".", we may include a variant of
    ~where "n + m" := (my_function n m) : B_scope.~ for introducing
    an operator immediately with a function definition.
+
+* Function Tactic ~simpl~ ---“simplify”
+
++ If the current subgoal contains a function call with all its arguments,
+   ~simpl~ will execute the function on the arguments.
+
+    + Sometimes a unfold is needed before ~simpl~ will work.
+
++ Modus ponens, or function application :: If we have ~imp : A -> B, a : A~
+  then ~imp a~ is of type ~B~. This also works if the ~imp~ contains ~forall~'s.
+
+:Exercises:
+*Exercises:* Use ~simpl~ to prove the following.
+#+begin_src coq
+Theorem true_is_True: Is_true true. Abort.
+#+end_src
+:End:
+
+* Conjunction & Disjunction ---products & sums--- and ‘iff’
+
+   #+BEGIN_SRC coq
+(* Haskell: Either a b = Left a | Right b *)
+Inductive or (A B:Prop) : Prop :=
+  | or_introl : A -> A \/ B
+  | or_intror : B -> A \/ B
+where "A \/ B" := (or A B) : type_scope.
+
+(* Haskell: Pair a b = MkPair a b *)
+Inductive and (A B:Prop) : Prop :=
+  conj : A -> B -> A /\ B
+where "A /\ B" := (and A B) : type_scope.
+
+Definition iff (A B:Prop) := (A -> B) /\ (B -> A).
+Notation "A <-> B" := (iff A B) : type_scope.
+#+END_SRC
+
+:Exercises:
+*Exercises:*
+#+begin_src coq
+Theorem or_weakening : (forall A B, A -> A \/ B). Abort.
+Theorem or_commutes : (forall A B, A \/ B -> B \/ A). Abort.
+Theorem and_weakening : (forall A B, A /\ B -> A). Abort.
+Theorem and_commutes : (forall A B, A /\ B -> B /\ A). Abort.
+
+Theorem orb_is_or : (forall a b, Is_true (orb a b) ↔ Is_true a \/ Is_true b). Abort.
+Theorem andb_is_and : (forall a b, Is_true (andb a b) ↔ Is_true a /\ Is_true b). Abort.
+#+end_src
+For the last two, use ~+,-,*~ to structure nested sub-goals ;-)
+:End:
+
+* Existence ∃
+
+# The mathematical /∃ x : X • P x/ is captured by ~ex P~ for ~P : X -> Prop~.
+#+BEGIN_SRC coq
+Inductive ex (A:Type) (P:A -> Prop) : Prop :=
+  ex_intro : forall x:A, P x -> ex (A:=A) P.
+
+Notation "'exists' x .. y , p" := (ex (fun x => .. (ex (fun y => p)) ..))
+  (at level 200, x binder, right associativity,
+   format "'[' 'exists'  '/  ' x  ..  y ,  '/  ' p ']'")
+  : type_scope.
+#+END_SRC
+
+Note that the constructor takes 3 arguments:
+The predicate ~P~, the witness ~x~, and a proof of ~P x~.
+
+If we pose a witness beforehand then ~refine (ex_intro _ witness _).~, Coq will infer ~P~ from
+the current goal and the new subgoal is the proof that the witness satisfies the predicate. This is the way to prove an existence claim.
+
+:Exercises:
+*Exercises:*
+Note that De Morgan's law, ∀¬≈¬∃, holds! Prove an implication to see this.
+#+BEGIN_SRC coq
+Theorem thm_exists_basics__again : (exists a, Is_true (andb a true)). Abort.
+Theorem demorgan : (forall P : Set->Prop, (forall x, ~(P x)) -> ~(exists x, P x)). Abort.
+Theorem codemorgan : (forall P : Set->Prop,  ~(exists x, P x) -> (forall x, ~(P x))). Abort. (* one-liner *)
+#+END_SRC
+:End:
 
 * Todo COMMENT Proof Refinement
 
@@ -397,118 +588,7 @@ Qed.
 
 \newpage
 
-* Examples of Common Datatypes
-
-+ ~Prop~ Type
-  - A ~Prop~ either has a proof or it does not have a proof.
-  - Coq restricts Prop to being either proven or unproven, rather than true or false.
-
-+ Sums
-   #+BEGIN_SRC coq
-Inductive or (A B:Prop) : Prop :=
-  | or_introl : A -> A \/ B
-  | or_intror : B -> A \/ B
-where "A \/ B" := (or A B) : type_scope.
-#+END_SRC
-
-+ Products
-  #+BEGIN_SRC coq
-Inductive and (A B:Prop) : Prop :=
-  conj : A -> B -> A /\ B
-where "A /\ B" := (and A B) : type_scope.
-#+END_SRC
-
-+ ℕaturals
-  #+BEGIN_SRC coq
-Inductive nat : Set :=
-  | O : nat   (* Capital-letter O, not the number zero. *)
-  | S : nat -> nat.
-#+END_SRC
-
-+ Options
-  #+BEGIN_SRC coq
-Inductive option (A : Type) : Type :=
-  | Some : A -> option A
-  | None : option .A
-#+END_SRC
-
-+ Lists
-  #+BEGIN_SRC coq
-Inductive list (A : Type) : Type :=
- | nil : list A
- | cons : A -> list A -> list A.
-
-Infix "::" := cons (at level 60, right associativity) : list_scope.
-#+END_SRC
-
-* ~True, False, true, false~
-
-The vernacular command ~Inductive~ lets you create a new type.
-
-+ The empty Prop, having no proofs, is ~False.~
-+ The top Prop, having a single proof named ~I~, is ~True~.
-+ The ~bool~ type has two values: ~true~ and ~false~.
-
-#+BEGIN_SRC coq
-Inductive False : Prop := .
-
-Inductive True : Prop :=
-  | I : True.
-
-Inductive bool : Set :=
-  | true : bool
-  | false : bool.
-#+END_SRC
-
-\iffalse principle of explosion
-#+BEGIN_SRC coq
-Theorem ex_falso_quod_libet : (forall A : Prop, False -> A).
-Proof.
-  intros A []
-Qed.
-#+END_SRC
-# Instead of "exact", we use the "case" tactic. "case" is powerful: it creates subgoals for every possible construction of its argument. Since there is no way to construct a False, "case" creates no subgoals! Without a subgoal, we're done!
-\fi
-
-In the boolean library there is a function ~Is_true~ which converts booleans
-into their associated Prop counterparts.
-* Existence ∃
-
-# The mathematical /∃ x : X • P x/ is captured by ~ex P~ for ~P : X -> Prop~.
-#+BEGIN_SRC coq
-Inductive ex (A:Type) (P:A -> Prop) : Prop :=
-  ex_intro : forall x:A, P x -> ex (A:=A) P.
-
-Notation "'exists' x .. y , p" := (ex (fun x => .. (ex (fun y => p)) ..))
-  (at level 200, x binder, right associativity,
-   format "'[' 'exists'  '/  ' x  ..  y ,  '/  ' p ']'")
-  : type_scope.
-#+END_SRC
-
-Note that the constructor takes 3 arguments: The predicate ~P~, the witness ~x~, and a proof of ~P x~.
-
-If we pose a witness beforehand then ~refine (ex_intro _ witness _).~, Coq will infer ~P~ from
-the current goal and the new subgoal is the proof that the witness satisfies the predicate.
-
-\iffalse
-Note that De Morgan's law, ¬∀≈∃¬, holds! Prove an implication to see this.
-#+BEGIN_SRC coq
-Theorem demorgan : (forall P : Set->Prop, (forall x, ~(P x)) -> ~(exists x, P x)).
-Proof.
-  intros P.
-  intros noP.
-  unfold not.
-  intros ex.
-  destruct ex as [ witness  proof ].
-  pose (uhoh := noP witness).
-  pose (absurd := uhoh proof).
-  case absurd.
-Qed.
-#+END_SRC
-The converse is also true!
-\fi
-
-* Equality, ~rewrite~, and ~reflexivity~
+* Todo COMMENT Equality, ~rewrite~, and ~reflexivity~
 
 Two operators,
 + ~x = y :> A~ says that ~x~ and ~y~ are equal and both have type ~A~.
@@ -565,7 +645,7 @@ Use the ~reflexivity~ tactic to discharge a goal of type ~x = x~.
     state.
     \fi
 
-* Discrepancy
+* Todo COMMENT Discrepancy
 
 Coq uses the operator ~<>~ for inequality, which really means /equality is unprovable/ or /equality implies False/.
 #+BEGIN_SRC coq  coq
