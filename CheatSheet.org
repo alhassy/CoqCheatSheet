@@ -741,6 +741,18 @@ What we can do instead is to first introduce all the quantified
     back at the beginning of the goal.  The [generalize dependent m]
     tactic does this.
 
+* Reads
+  + [ ] [[https://coq.inria.fr/tutorial-nahas][A tutorial by Mike Nahas]] ---an excellent beginner's tutorial!
+  + [ ] [[http://flint.cs.yale.edu/cs430/sectionNotes/section1/CoqTutorial.pdf][Theorem proving with Coq]] ---terse Coq overview, 13 pages
+  + [ ] [[http://flint.cs.yale.edu/cs430/coq/pdf/Tutorial.pdf][The Coq Proof Assistant, A Tutorial]] ---gentle, 53 pages.
+  + [ ] [[https://www.lri.fr/~paulin/LASER/course-notes.pdf][Introduction to the Coq proof-assistant for practical software verification]] ---compact! 50 pages
+  + [ ] [[https://math-comp.github.io/mcb/book.pdf][Mathematical Components]] ---formalisation techniques ♥‿♥
+  + [ ] [[http://adam.chlipala.net/cpdt/html/toc.html][Certified Programming with Dependent Types]]
+  + [ ] [[https://ilyasergey.net/pnp/pnp.pdf][Mechanizing Mathematics with Dependent Types]] ---ssreflect!
+  + [ ] [[http://www.labri.fr/perso/casteran/RecTutorial.pdf][A Tutorial on (Co-)Inductive Types in Coq]]
+  + [ ] [[https://softwarefoundations.cis.upenn.edu/][Software Foundations]] ---and ‘vfa’!
+
+  [[https://github.com/coq/coq/wiki/TheoryBehindCoq][Theory behind Coq]]
 
 * COMMENT Making README.md
 
