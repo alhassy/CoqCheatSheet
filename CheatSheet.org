@@ -1,5 +1,8 @@
 # C-c C-e l o ;-)
 
+# Proof general configuration for the Coq Software Foundations tutorial
+# https://endlessparentheses.com/proof-general-configuration-for-the-coq-software-foundations-tutorial.html
+
 #+TITLE: Beginning Coq Reference Sheet
 # SUBTITLE: Cheat Sheet Template
 #+MACRO: URL https://github.com/alhassy/CoqCheatSheet
@@ -28,6 +31,7 @@ prettification of operators, auto-completion of identifiers and module names, ju
 ;; Now add it to Emacs' path; obtained by invoking: which coqtop
 (add-to-list 'exec-path "/Users/musa/opam-coq.8.9.1/ocaml-base-compiler.4.02.3/bin/")
 ;; Alternatively: (setq coq-prog-name "PATH/TO/coqtop")
+(setq coq-prog-name "/Users/musa/opam-coq.8.9.1/ocaml-base-compiler.4.02.3/bin/coqtop")
 
 (use-package proof-general :demand t)
 
@@ -115,6 +119,230 @@ Check le_S 2 5.
 (* le_ S 2 5 : 2 <= 5 -> 2 <= 6 *)
 #+END_SRC
 
+
+
+* Administrivia  :convert::ignore:
+
+#+latex: \vspace{1em}
+
+OCaml is a strict language;
+it is strongly typed where types are inferred.
+#+latex: \newline
+I may write explicit type annotations below for demonstration
+or clarity purposes.
+  #+BEGIN_SRC ocaml
+  (* Using explicit type annotations *)
+  let x : int = 3;;
+  let f (x : int) (y : string) (r : 'a) : float = 3.14;;
+#+END_SRC
+
+Only when interacting with the top-level interpreter,
+commands must be terminated by ~;;~.
+OCaml uses ~;~ as an expression /separator/ ---not a terminator!
+#+latex: \newline
+My Emacs setup for OCaml can be found on this [[https://github.com/alhassy/OCamlCheatSheet][CheatSheet's repo]].
+* Functions & Variables
+
+#+latex: \hspace{-5ex}
+  A function is declared with the ~Definition ⋯ := ⋯.~ syntax
+---variables are functions of zero arguments.
+Function & varaible names /must/ begin with a lowercase letter, and may use _ or ~'~.
++ They cannot begin with capital letters or numbers, or contain dashes!
++ Functions are like variables, but with arguments, so the same syntax applies.
+
+#+latex: \vspace{-0.5em}
+#
+#+begin_parallel org
+#+BEGIN_SRC coq
+(* A curried function *)
+Definition f x y := x + y.
+
+(* Function application; no computation *)
+Definition result := f 10 (2 * 6).
+Compute result. (* Normalises to 22 *)
+
+(* Partial application *)
+Definition g x := f x.
+#+END_SRC
+
+#+latex: \columnbreak
+
+Recursive functions use the ~Fixpoint~ keyword instead.
+#+BEGIN_SRC ocaml
+Fixpoint fact n := match n with
+                   | O   => 1
+                   | S n => S n * fact n end.
+
+Compute fact 5. (* 120 *)
+#+END_SRC
+
+#+end_parallel
+
+#+latex: \vspace{-1em}
+ Here's an example of a higher-order function & multiple local functions
+ & an anonymous function & the main method is
+ parametricly polymorphic.
+#+BEGIN_SRC coq
+Definition try_sum {A : Type} (bop : A -> A -> A) (test : A -> bool)
+           (default : A) (x : A) (y : A)
+:= let wrap a := if test a then a else default
+   in bop (wrap x) (wrap y).
+
+Require Import Nat.
+Compute try_sum Nat.add (fun a => eqb (modulo a 3) 0) 666 1 33. (* 699 *)
+#+END_SRC
+
+* Booleans
+#+BEGIN_SRC coq
+Require Import Bool.
+Compute (true || false , true && false, if true then 1 else 2).
+(* eqb, implb, and ifb is an alias for if-then-else. *)
+#+END_SRC
+
+* Strings
+
+#+BEGIN_SRC coq
+Require Import String.
+Compute ("string catenation" =? ("string " ++ "catenation"))%string.
+(* The parens are important. *)
+#+END_SRC
+
+* Records  :convert:
+  Records: Products with named, rather than positional, components.
+#+BEGIN_SRC ocaml
+  type point2d = {x : float; y : float};;
+
+  (* Construction *)
+  let p = {y = 2.0; x = 3.4};;
+
+  (* Pattern matching for deconstruction *)
+  let {x = px; y = py} = p;;
+  let go {x = qx; y = qy} = qx +. qy;;
+
+  (* More tersely, using “field punning”: Variables must coincide with field names. *)
+  let erroenous ({xx; y} : point2d )= x +. y;;
+  let works {x; y} = 0.0;;
+
+  (* Or we can use dot notation *)
+  let go q = q.x +. q.y;;
+#+END_SRC
+
+* Variants and Pattern Matching  :convert:
+   Variant types: A unified way to combine different types into a single type;
+   each case is distinuighed by a capitalised tag.
+
+#+BEGIN_SRC ocaml
+(* Constructors must start with a capital letter, like in Haskell *)
+type 'a fancy_num =   Nothing | Boring of int | Fancy of 'a
+            | Point of point2d | Pair of 'a fancy_num * 'a fancy_num
+
+let example = Pair (Fancy "twenty", Point {x = 1.2; y = 3.14})
+#+END_SRC
+
+The tags allow us to /extract/ components of a variant value
+as well as to case against values by inspecting their tags.
+This is /pattern matching/.
+
+#+BEGIN_SRC ocaml
+(* Destructuring a value *)
+let Pair(head, _) = example;;
+
+(* Guarded pattern matching, with in-line casing via ‘match’ *)
+let rec sum acc = function
+  | Nothing -> 0 + (match acc with true -> 1 | false -> 0)
+  | Fancy x when x <= "nine" -> 0
+  | (Fancy "twenty") as p -> failwith "Evil!"
+  | Pair(l, r) -> sum acc l + sum acc r
+  | _ -> 2 (* Default case *)
+
+let res = sum true example (* Exception: Failure "Evil!" *)
+
+(* Type aliases can also be formed this way *)
+type myints = int
+#+END_SRC
+
+Note that we can give a pattern a name; above we mentioned ~p~,
+but did not use it.
+
++ Repeated & non-exhaustive patterns trigger a warning; e.g., remove the default case above.
+
++ You can pattern match on arrays too; e.g.,
+  ~[| x ; y ; z|] -> y~.
+
+#+latex:  \room
+The above mechanisms apply to all variants ---including tuples, lists, and options.
+
+* Tuples and Lists  :convert:
+  Tuples: Parentheses are optional, comma is the main operator.
+#+BEGIN_SRC ocaml
+  let mytuple  : int * string * float = (3, "three", 3.0);;
+
+  (* Pattern matching & projection *)
+  let (woah0, woah1, woah2) = mytuple;;
+  let add_1and4 (w, x, y, z) = w + z;;
+  let that = fst ("that", false)
+
+  (* A singelton list of one tuple !!!!  *)
+  let zs = [ 1, "two", true ]
+
+  (* Lists:  type 'a list = [] | (::) of 'a * 'a list  *)
+  let xs = [1; 2; 3]
+  [1; 2; 3] = 1 :: 2 :: 3 :: [];; (* Syntactic sugar *)
+
+  (* List catenation *)
+  [1;2;4;6] = [1;2] @ [4;6];;
+
+  (* Pattern matching example; Only works on lists of length 3 *)
+  let go [x; y; z] = x + y + z;;
+  14 = go [2;5;7];;
+
+  (* Labelled arguments, using ‘~’, means position is irrelevant *)
+  [1; 2; 3] = List.map ["a", "ab", "abc"] ~f:String.length;;
+  [1; 2; 3] = List.map  ~f:String.length ["a", "ab", "abc"];;
+#+END_SRC
+
+:More:
+Then,
+| List.nth list index   |
+| List.map func list    |
+| List.filter func list |
+| List.hd               |
+| List.rev              |
+| List.length           |
+| String.length         |
+
++ Syntax: ~[x₀; ...; xₙ]~
+
+  - Tuples are optionally enclosed in parens;
+    hence ~[x₀, ..., xₙ]~ is a singleton list
+    consisting of only one tuple!
+
++ Expected functionals:
+    ~List.nth~ for list lookup,
+    ~List.map~, ~List.filter~, etc.
+
++ Cons operation is denoted ~::~.
+
++ Arrays have syntax ~[|x₀; ...; xₙ|]~
+   with 0-indexing lookup ~arr.(n)~.
+
+:End:
+
+* spacing COMMENT break :ignore:
+  \columnbreak
+
+* Options  :convert:
+Option: Expressing whether a value is present or not.
+#+BEGIN_SRC ocaml
+  (* type 'a option = None | Some of 'a *)
+
+  let divide x y : int option = if y = 0 then None else Some (x / y);;
+
+  let getInt ox = match ox with None -> 0 | Some x -> x;;
+  0 = getInt None;;
+  2 = getInt (Some 2);;
+#+END_SRC
+
 * Example Proof :Maybe_prove_classic_demorgan_instead:
 
   #+begin_src coq
@@ -156,8 +384,8 @@ Check le_S 2 5.
   Theorem T : S.  (* T is only a name and can be used later. *)
   Proof.
   P  (* See the current state of the proof in the CoqIde by clicking, in the toolbar,
-	on the green arrow pointing at a yellow ball;
-	or do "C-c C-Enter" in Proof General with Emacs. *)
+    on the green arrow pointing at a yellow ball;
+    or do "C-c C-Enter" in Proof General with Emacs. *)
   Qed.
   #+END_SRC
 
@@ -216,7 +444,7 @@ Require Import Bool.
      in hypothesis ~H~.
      - By default, tactics apply to the current subgoal.
 
-* COMMENT Pattern matching with ~case~ ::
+* COMMENT Pattern matching with ~case~
    # For an element ~xs~ of a type having /n/ constructors, ~case xs~ produces ~n~ subgoals of the form ~A₁ → ⋯ → Aₙᵢ → newSubgoal~ where the ~Aⱼ~ are the arguments of the constructor.
 
   If we do a ~case~ on an item of type ~A \/ B~ then we obtain two new subgoals:
@@ -467,7 +695,7 @@ Definition my_function (a0 : A0) ⋯ (a99 : A99) : B :=
 #+END_SRC
 
 + Telescoping :: If ~x₀, ⋯, x_n~ have the same type, say ~T~,
-		 we may declare their typing by ~(x₀ ⋯ x_n : T)~.
+         we may declare their typing by ~(x₀ ⋯ x_n : T)~.
 + Notation :: Before the final ".", we may include a variant of
    ~where "n + m" := (my_function n m) : B_scope.~ for introducing
    an operator immediately with a function definition.
@@ -741,6 +969,193 @@ What we can do instead is to first introduce all the quantified
     back at the beginning of the goal.  The [generalize dependent m]
     tactic does this.
 
+* Coq Modules
+
+Module systems parameterise proofs and tactics over structures.
+
+#+BEGIN_SRC coq
+Check 0.
+(**
+
+1. A ~Module Type~ contains the signature of the abstract structure to work from;
+   it lists the ~Parameter~'s and ~Axiom~'s we want to use, possibly along
+   with notation declaration to make the syntax easier.
+**)
+(**
+
+|      || Signature     | Structure      |
+| Coq  || ≈ module type | ≈ module       |
+| Agda || ≈ record type | ≈ record value |
+| JavaScript || ≈ prototype | ≈ JSON object |
+
+It is perhaps seen most easily in the last entry in the table, that
+modules and modules types are essentially the same thing: They are just
+partially defined record types. Again there is a difference in the usage intent:
+
+| Concept | Intent |
+|---------|--------|
+| Module types | Any name may be opaque, undefined. |
+| Modules | All names must be fully defined. |
+
+**)
+
+Module Type Graph.
+  Parameter Vertex : Type.
+  Parameter Edges : Vertex -> Vertex -> Prop.
+  Infix "<=" := Edges : order_scope.
+  Open Scope order_scope.
+  Axiom loops : forall e, e <= e.
+  Parameter decidable : forall x y, {x <= y} + {not (x <= y)}.
+  Parameter connected : forall x y, {x <= y} + {y <= x}.
+End Graph.
+
+(* To form an instance of the graph module type, we define a module *)
+(* that satisfies the module type signature: The ~<:~ declaration requires *)
+(* us to have definitions and theorems with the same names and types *)
+(* as those listed in the module type's signature. *)
+
+Require Import Bool.
+
+Module BoolGraph <: Graph.
+  Definition Vertex := bool.
+  Definition Edges  := fun x => fun y => leb x y.
+  Infix "<=" := Edges : order_scope.
+  Open Scope order_scope.
+  Theorem loops: forall x : Vertex, x <= x.
+    Proof.
+    intros; unfold Edges, leb; destruct x; tauto.
+    Qed.
+  Theorem decidable: forall x y, {Edges x y} + {not (Edges x y)}.
+    Proof.
+      intros; unfold Edges, leb; destruct x, y.
+      all: (right; discriminate) || (left; trivial).
+  Qed.
+  Theorem connected: forall x y, {Edges x y} + {Edges y x}.
+    Proof.
+      intros; unfold Edges, leb. destruct x, y.
+      all: (right; trivial; fail) || left; trivial.
+  Qed.
+End BoolGraph.
+
+(*
+Now we can write a “module functor”: A module that takes some ~Module Type~ parameters. E.g., here is a module that define a minimum function.
+
+Min is a function-on-modules; the input type is Graph
+and the output module type is “Sig Definition min : ⋯. Parameter case_analysis: ⋯. End”. This is similar to JavaScript's approach.
+*)
+Module Min (G : Graph).
+  Import G. (* I.e., open it so we can use names in unquantifed form. *)
+  Definition min a b : Vertex := if (decidable a b) then a else b.
+  Theorem case_analysis: forall P : Vertex -> Type, forall x y,        (x <= y -> P x) -> (y <= x -> P y) -> P (min x y).
+  Proof.
+    intros. (* P, x, y, and hypothesises H₀, H₁ now in scope*)
+    (* Goal: P (min x y) *)
+    unfold min. (* Rewrite “min” according to its definition. *)
+    (* Goal: P (if decidable x y then x else y) *)
+    destruct (decidable x y). (* Pattern match on the result of “decidable”. *)
+    (* Subgoal 1: P x  ---along with new hypothesis H₃ : x ≤ y *)
+    tauto. (* i.e., modus ponens using H₁ and H₃ *)
+    (* Subgoal 2: P y  ---along with new hypothesis H₃ : ¬ x ≤ y *)
+    destruct (connected x y).
+    (* Subgoal 2.1: P y ---along with new hypothesis H₄ : x ≤ y *)
+    absurd (x <= y); assumption.
+    (* Subgoal 2.2: P y ---along with new hypothesis H₄ : y ≤ x *)
+    tauto. (* i.e., modus ponens using H₂ and H₄ *)
+  Qed.
+End Min.
+
+(* We may now apply the module functor. *)
+
+Module Conjunction := Min BoolGraph.
+Export Conjunction.
+Print min.
+(*
+min =
+fun a b : BoolGraph.Vertex => if BoolGraph.decidable a b then a else b
+     : BoolGraph.Vertex -> BoolGraph.Vertex -> BoolGraph.Vertex
+ *)
+
+(*
+Unlike the previous functor, which had its return type inferred, we may
+explicitly declare a return type. E.g., the following functor is
+a Graph → Graph function.
+*)
+Module Dual (G : Graph) <: Graph.
+  Definition Vertex := G.Vertex.
+  Definition Edges  x y : Prop := G.Edges y x.
+  Definition loops := G.loops.
+  Infix "<=" := Edges : order_scope.
+  Open Scope order_scope.
+  Theorem decidable: forall x y, {x <= y} + {not (x <= y)}.
+    Proof.
+      unfold Edges. pose (H := G.decidable). auto.
+  Qed.
+  Theorem connected: forall x y, {Edges x y} + {Edges y x}.
+    Proof.
+      unfold Edges.  pose (H := G.connected). auto.
+  Qed.
+End Dual.
+
+(* Example use, with renaming “min ↦ max” *)
+Module Max (G : Graph).
+  (* Module applications cannot be chained; intermediate modules must be named. *)
+  Module DualG   := Dual G.
+  Module Flipped := Min DualG.
+  Import G.
+  Definition max := Flipped.min.
+  Definition max_case_analysis:
+        forall P : Vertex -> Type, forall x y,
+        (y <= x -> P x) -> (x <= y -> P y) -> P (max x y)
+        := Flipped.case_analysis.
+End Max.
+
+(*
+See the ModuleSystemTutorial in Github coq/coq:
+https://github.com/coq/coq/wiki/ModuleSystemTutorial
+*)
+
+
+(* ---------------------------------------------------------------------------- *)
+
+(* Coq has generative modules: Each application produces a new datatype instance. *)
+Module Type Unit. End Unit. (* Empty signature. *)
+Module TT <: Unit. End TT.  (* Empty structure. *)
+Module F (X : Unit).
+  Inductive t : Type := MakeT.
+End F.
+
+Module A := F TT.
+Module B := F TT.
+Fail Check eq_refl : A.t = B.t.
+Print A.t.
+
+Module Type Carrier. Parameter t : Type. End Carrier.
+Module Nat <: Carrier. Definition t := nat. End Nat.
+
+Module Type Morphism (X : Carrier) <: Carrier. Parameter t : Type. End Morphism.
+Module Identity (X : Carrier) <: Morphism X. Definition t := X.t. End Identity.
+
+Module Alias  (X : Carrier). Module M := X. End Alias.
+Module AtNat  (F : Morphism). Module M := F Nat. End AtNat.
+
+Module N := Alias Nat.
+Print N.M.t.
+(* N.M.t = Nat.t
+     : Type
+
+Modules η-expand and so aliasing does nothing.
+ *)
+
+Module O := AtNat Identity.
+Print O.M.t.
+(*
+[ O.M.t : Type ] ; i.e., an opaque type
+
+Type of functors do not η-reduce, and as such one cannot expect them to be applicative, and so are generative ^_^
+
+See coq/coq OpenIssuesWithModules: https://github.com/coq/coq/wiki/OpenIssuesWithModules
+ *)
+#+END_SRC
 * Reads
   + [ ] [[https://coq.inria.fr/tutorial-nahas][A tutorial by Mike Nahas]] ---an excellent beginner's tutorial!
   + [ ] [[http://flint.cs.yale.edu/cs430/sectionNotes/section1/CoqTutorial.pdf][Theorem proving with Coq]] ---terse Coq overview, 13 pages

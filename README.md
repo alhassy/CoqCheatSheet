@@ -1,29 +1,39 @@
-# CoqCheatSheet
+<h1> CoqCheatSheet </h1>
 
 This project is to contain a listing of common facts for working with the Coq language.
-**The listing sheet, as PDF, can be found [here](https://github.com/alhassy/CoqCheatSheet/blob/master/CheatSheet.pdf)**, while below is an html rendition.
+
+**The listing sheet, as PDF, can be found
+[here](<https://github.com/alhassy/CoqCheatSheet/blob/master/CheatSheet.pdf>)**,
+while below is an unruly html rendition.
+
+This reference sheet is built around the system
+<https://github.com/alhassy/CheatSheet>.
 
 
 # Table of Contents
 
-1.  [Emacs COMMENT Setup](#orgee45ef7)
-2.  [Example Proof](#orge567a35)
-3.  [Administrivia, Syntax](#orgb4b6a65)
-4.  [`intros` Tactic: ‘∀, ⇒’ Introduction](#org8e3cc59)
-5.  [`exact` Tactic](#orgffacadc)
-6.  [Tactics `refine` & `pose` [local declarations]](#org052b935)
-7.  [Simple Tactics](#orgd9a3a69)
-8.  [Todo COMMENT Algebraic Datatypes](#orgff6f444)
-9.  [Pattern matching with `destruct`](#org1c70008)
-10. [`Notation`, `Definition`, and the tactics `fold` and `unfold`](#orge847a72)
-11. [Todo COMMENT Proof Refinement](#orgea2dd24)
-12. [Examples of Common Datatypes](#org7b2e9e7)
-13. [`True, False, true, false`](#org33f6484)
-14. [Existence ∃](#orgd918359)
-15. [Equality, `rewrite`, and `reflexivity`](#org805395a)
-16. [Discrepancy](#org0eb2dda)
-17. [Searching for Existing Proofs](#org514a2c5)
-18. [Todo COMMENT More Basic Tactics](#orgb88156a)
+1.  [Functions & Variables](#org2ad82a9)
+2.  [Booleans](#orgc67eca9)
+3.  [Strings](#org88dff25)
+4.  [Records](#org2f8b274):convert:
+5.  [Variants and Pattern Matching](#org66dd23a):convert:
+6.  [Tuples and Lists](#org82d005e):convert:
+7.  [Options](#org0ab6c28):convert:
+8.  [Example Proof](#org1362369):Maybe_prove_classic_demorgan_instead:
+9.  [Administrivia, Syntax](#orgdbefe31)
+10. [`intros` Tactic: ‘∀, ⇒’ Introduction](#org8826991)
+11. [`exact` Tactic](#orgfc95040)
+12. [Tactics `refine` & `pose` [local declarations]](#orgea57d77)
+13. [Algebraic Datatypes ---`Inductive` and `case`](#orgf64e78c)
+14. [Examples of Common Datatypes](#orgb1dfecd)
+15. [`True, False, true, false`](#org13c28f6)
+16. [`Notation`, `Definition`, and the tactics `fold` and `unfold`](#orgda7698f)
+17. [Function Tactic `simpl` &#x2014;“simplify”](#orgbf6b1dd)
+18. [Conjunction & Disjunction &#x2014;products & sums&#x2014; and ‘iff’](#org7639a17)
+19. [Existence ∃](#org67dfa39)
+20. [Searching for Existing Proofs](#orgaceee4f)
+21. [Coq Modules](#org699e6cf)
+22. [Reads](#orgdc02afb)
 
 
 
@@ -36,58 +46,201 @@ This project is to contain a listing of common facts for working with the Coq la
 
 
 
-<a id="orgee45ef7"></a>
+OCaml is a strict language;
+it is strongly typed where types are inferred.
 
-# Emacs COMMENT Setup
+I may write explicit type annotations below for demonstration
+or clarity purposes.
 
-[Proof General](https://proofgeneral.github.io/) is a generic Emacs interface for interactive proof assistants &#x2014;predominately [Coq](https://coq.inria.fr/).
-We use [company-coq](https://github.com/cpitclaudel/company-coq) code completion &#x2014;that link has many screenshots and gifs ;-)
-Execute `M-x company-coq-tutorial` to see what it does; including on the fly documentation for identifiers with source definitions,
-prettification of operators, auto-completion of identifiers and module names, jumping to definitions, and proof folding.
+    (* Using explicit type annotations *)
+    let x : int = 3;;
+    let f (x : int) (y : string) (r : 'a) : float = 3.14;;
 
-    ;; Install Coq from here: https://coq.inria.fr/opam-using.html
-    ;; More easily: brew install coq
-    ;; Either way ensure: $ coqc --version  ⇒  8.9.1
+Only when interacting with the top-level interpreter,
+commands must be terminated by `;;`.
+OCaml uses `;` as an expression *separator* &#x2014;not a terminator!
 
-    ;; Now add it to Emacs' path; obtained by invoking: which coqtop
-    (add-to-list 'exec-path "/Users/musa/opam-coq.8.9.1/ocaml-base-compiler.4.02.3/bin/")
-    ;; Alternatively: (setq coq-prog-name "PATH/TO/coqtop")
-
-    (use-package proof-general :demand t)
-
-    ;; Let's also obtain code completion.
-    (use-package company-coq :demand t)
-    ;; Load company-coq when opening Coq files
-    (add-hook 'coq-mode-hook #'company-coq-mode)
-
-    ;; When working literately with Coq, I've found this to be nice.
-    (setq org-src-window-setup 'split-window-below)
-      ;; (setq org-src-window-setup 'reorganize-frame) ;; default
-
-    ;; Ensure goals and proof checking responses have dedicated buffers.
-    ;; t ⇒ takes up the entire screen for a total of 3 buffers.
-    (setq proof-three-window-enable t)
-
--   Files ending in the appropriate extension, or invoking the prover's mode, will automatically enable Proof General.
--   Besides the new menu bar, press `C-h m` to obtain more help about Proof General.
-
-    In a Coq script, press `C-c C-RETURN` to have the script up to the current point
-    evaluated &#x2014;Proof General will colour that portion blue.
-
-    -   `C-c C-n` to step through a script.
-    -   For literate programming with Org-mode, press `C-c '` on a src block first,
-	check the proof, then `C-c '` to return to literate fashion.
-
-\room
-To prove a theorem in Coq, you state the theorem, provide tactics that reduce it to a number
-of sub-goals, then recurse on each sub-goal until there are no more.
-Many, if not all subgoals, are simple enough to be discharged with automation.
+My Emacs setup for OCaml can be found on this [CheatSheet's repo](https://github.com/alhassy/OCamlCheatSheet).
 
 
+<a id="org2ad82a9"></a>
 
-<a id="orge567a35"></a>
+# Functions & Variables
 
-# Example Proof
+  A function is declared with the `Definition ⋯ := ⋯.` syntax
+&#x2014;variables are functions of zero arguments.
+Function & varaible names *must* begin with a lowercase letter, and may use \_ or `'`.
+
+-   They cannot begin with capital letters or numbers, or contain dashes!
+-   Functions are like variables, but with arguments, so the same syntax applies.
+
+<div style="column-rule-style:solid;column-count:2;"    (* A curried function *)
+    Definition f x y := x + y.
+
+    (* Function application; no computation *)
+    Definition result := f 10 (2 * 6).
+    Compute result. (* Normalises to 22 *)
+
+    (* Partial application *)
+    Definition g x := f x.
+
+Recursive functions use the `Fixpoint` keyword instead.
+
+    Fixpoint fact n := match n with
+                       | O   => 1
+                       | S n => S n * fact n end.
+
+    Compute fact 5. (* 120 *)
+</div>
+
+Here's an example of a higher-order function & multiple local functions
+& an anonymous function & the main method is
+parametricly polymorphic.
+
+    Definition try_sum {A : Type} (bop : A -> A -> A) (test : A -> bool)
+               (default : A) (x : A) (y : A)
+    := let wrap a := if test a then a else default
+       in bop (wrap x) (wrap y).
+
+    Require Import Nat.
+    Compute try_sum Nat.add (fun a => eqb (modulo a 3) 0) 666 1 33. (* 699 *)
+
+
+<a id="orgc67eca9"></a>
+
+# Booleans
+
+    Require Import Bool.
+    Compute (true || false , true && false, if true then 1 else 2).
+    (* eqb, implb, and ifb is an alias for if-then-else. *)
+
+
+<a id="org88dff25"></a>
+
+# Strings
+
+    Require Import String.
+    Compute ("string catenation" =? ("string " ++ "catenation"))%string.
+    (* The parens are important. *)
+
+
+<a id="org2f8b274"></a>
+
+# Records     :convert:
+
+Records: Products with named, rather than positional, components.
+
+    type point2d = {x : float; y : float};;
+
+    (* Construction *)
+    let p = {y = 2.0; x = 3.4};;
+
+    (* Pattern matching for deconstruction *)
+    let {x = px; y = py} = p;;
+    let go {x = qx; y = qy} = qx +. qy;;
+
+    (* More tersely, using “field punning”: Variables must coincide with field names. *)
+    let erroenous ({xx; y} : point2d )= x +. y;;
+    let works {x; y} = 0.0;;
+
+    (* Or we can use dot notation *)
+    let go q = q.x +. q.y;;
+
+
+<a id="org66dd23a"></a>
+
+# Variants and Pattern Matching     :convert:
+
+Variant types: A unified way to combine different types into a single type;
+each case is distinuighed by a capitalised tag.
+
+    (* Constructors must start with a capital letter, like in Haskell *)
+    type 'a fancy_num =   Nothing | Boring of int | Fancy of 'a
+                | Point of point2d | Pair of 'a fancy_num * 'a fancy_num
+
+    let example = Pair (Fancy "twenty", Point {x = 1.2; y = 3.14})
+
+The tags allow us to *extract* components of a variant value
+as well as to case against values by inspecting their tags.
+This is *pattern matching*.
+
+    (* Destructuring a value *)
+    let Pair(head, _) = example;;
+
+    (* Guarded pattern matching, with in-line casing via ‘match’ *)
+    let rec sum acc = function
+      | Nothing -> 0 + (match acc with true -> 1 | false -> 0)
+      | Fancy x when x <= "nine" -> 0
+      | (Fancy "twenty") as p -> failwith "Evil!"
+      | Pair(l, r) -> sum acc l + sum acc r
+      | _ -> 2 (* Default case *)
+
+    let res = sum true example (* Exception: Failure "Evil!" *)
+
+    (* Type aliases can also be formed this way *)
+    type myints = int
+
+Note that we can give a pattern a name; above we mentioned `p`,
+but did not use it.
+
+-   Repeated & non-exhaustive patterns trigger a warning; e.g., remove the default case above.
+
+-   You can pattern match on arrays too; e.g.,
+    `[| x ; y ; z|] -> y`.
+
+The above mechanisms apply to all variants &#x2014;including tuples, lists, and options.
+
+
+<a id="org82d005e"></a>
+
+# Tuples and Lists     :convert:
+
+Tuples: Parentheses are optional, comma is the main operator.
+
+    let mytuple  : int * string * float = (3, "three", 3.0);;
+
+    (* Pattern matching & projection *)
+    let (woah0, woah1, woah2) = mytuple;;
+    let add_1and4 (w, x, y, z) = w + z;;
+    let that = fst ("that", false)
+
+    (* A singelton list of one tuple !!!!  *)
+    let zs = [ 1, "two", true ]
+
+    (* Lists:  type 'a list = [] | (::) of 'a * 'a list  *)
+    let xs = [1; 2; 3]
+    [1; 2; 3] = 1 :: 2 :: 3 :: [];; (* Syntactic sugar *)
+
+    (* List catenation *)
+    [1;2;4;6] = [1;2] @ [4;6];;
+
+    (* Pattern matching example; Only works on lists of length 3 *)
+    let go [x; y; z] = x + y + z;;
+    14 = go [2;5;7];;
+
+    (* Labelled arguments, using ‘~’, means position is irrelevant *)
+    [1; 2; 3] = List.map ["a", "ab", "abc"] ~f:String.length;;
+    [1; 2; 3] = List.map  ~f:String.length ["a", "ab", "abc"];;
+
+
+<a id="org0ab6c28"></a>
+
+# Options     :convert:
+
+Option: Expressing whether a value is present or not.
+
+    (* type 'a option = None | Some of 'a *)
+
+    let divide x y : int option = if y = 0 then None else Some (x / y);;
+
+    let getInt ox = match ox with None -> 0 | Some x -> x;;
+    0 = getInt None;;
+    2 = getInt (Some 2);;
+
+
+<a id="org1362369"></a>
+
+# Example Proof     :Maybe_prove_classic_demorgan_instead:
 
     (* “for all things you could prove, *)
     (*    if you have a proof of it, then you have a proof of it.” *)
@@ -119,7 +272,7 @@ Many, if not all subgoals, are simple enough to be discharged with automation.
     -   We can write functions directly or use [proof] tactics to write functions!
 
 
-<a id="orgb4b6a65"></a>
+<a id="orgdbefe31"></a>
 
 # Administrivia, Syntax
 
@@ -127,16 +280,19 @@ Many, if not all subgoals, are simple enough to be discharged with automation.
 -   The phrase *Theorem T identifying statement S is proven by P*
     is formalised as
 
-	Theorem T : S.  (* T is only a name and can be used later. *)
-	Proof.
-	P  (* See the current state of the proof in the CoqIde by clicking, in the toolbar,
-	      on the green arrow pointing at a yellow ball;
-	      or do "C-c C-Enter" in Proof General with Emacs. *)
-	Qed.
+        Theorem T : S.  (* T is only a name and can be used later. *)
+        Proof.
+        P  (* See the current state of the proof in the CoqIde by clicking, in the toolbar,
+          on the green arrow pointing at a yellow ball;
+          or do "C-c C-Enter" in Proof General with Emacs. *)
+        Qed.
 
 -   Instead of `Theorem`, you may also see proofs that start with
     `Example`, `Lemma`, `Remark`, `Fact`, `Corollary`, and `Proposition`, which all
     mean the same thing. This difference is mostly a matter of style.
+
+-   A defined theorem is essentially a function and so it can be used with arguments,
+    in order to prove a result, as if it were a function.
 
 -   The command `Admitted`, in-place of `Qed`, can be used as a placeholder for an
     incomplete proof or definition.
@@ -155,28 +311,19 @@ Many, if not all subgoals, are simple enough to be discharged with automation.
 -   **Introduce local definitions:** Two ways,
     -   Simple alias: `pose (new_thing := complicated_expression).`
     -   More involved: Write tactic `assert (x : X).` to define a new identifier
-	`x` for a proof of `X` which then follows, and is conventionally indented.
+        `x` for a proof of `X` which then follows, and is conventionally indented.
 
 -   **Imports:** Loading definitions from a library,
 
-	Require Import Bool.
+        Require Import Bool.
 
-\iffalse
-
--   **Pattern matching with `case`:** If we do a `case` on an item of type `A \/ B` then we obtain two new subgoals:
-      `A → …` and `B → …`, which may be begun with `intros` as usual.
-    -   `case` alters subgoals and never the context already `intro`-duced.
-
-The "case" tactic only changes the subgoal.
-Hence whether it is invoked before all possible intros or not gives different
-proof power. For example, try proving:
-
-    Theorem thm_eqb_a_t: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)).
-
-\fi
+-   **Local tactic application:** `t in s` performs the tactic `t` only within
+    the hypothesis, term, `s`. For example, `unfold defnName in H` performs a local rewrite
+    in hypothesis `H`.
+    -   By default, tactics apply to the current subgoal.
 
 
-<a id="org8e3cc59"></a>
+<a id="org8826991"></a>
 
 # `intros` Tactic: ‘∀, ⇒’ Introduction
 
@@ -185,13 +332,13 @@ proof power. For example, try proving:
 -   To prove `∀ x0 x1 ... xN, Pxs` use `intros x0 x1 ... xN` to obtain the subgoal `Pxs`.
     -   Using just `“intros.”` is the same as `intros H H0 H1 ... HN-1.` &#x2014;‘H’ for hypothesis.
     -   Prop names are introduced with the name declared;
-	e.g., `“intros.”` for `“∀ A : Prop, Px”`
-	uses the name `A` automatically.
+        e.g., `“intros.”` for `“∀ A : Prop, Px”`
+        uses the name `A` automatically.
 -   Note: `(A → B) = (∀ a:A, B)` and so `intros` works for ‘→’ as well.
 -   `Show Proof` will desugar `intros` into argument declarations of a function.
 
 
-<a id="orgffacadc"></a>
+<a id="orgfc95040"></a>
 
 # `exact` Tactic
 
@@ -200,7 +347,7 @@ proof power. For example, try proving:
     currently defined function.
 
 
-<a id="org052b935"></a>
+<a id="orgea57d77"></a>
 
 # Tactics `refine` & `pose` [local declarations]
 
@@ -212,70 +359,124 @@ the arguments of `p`.
 -   If we happen to have a proof of any \(A_i\), then we may use it instead of an ‘\_’.
 -   Any one of the underscores could itself be `(q _ ... _)` if we for some proof `q`.
 
-**Exercise:**
-Prove the ‘modus ponens’ proposition in three ways.
-
-    Theorem refine_with_one_subgoal : forall A B : Prop, A -> (A -> B) -> B. Abort.
-
-    Theorem using_only_exact : forall A B : Prop, A -> (A -> B) -> B. Abort.
-
-    Theorem refine_with_no_subgoals : forall A B : Prop, A -> (A -> B) -> B. Abort.
-
-Likewise, prove \(∀ A B C,  A → (A → B) → (B → C) → C\) in three such ways.
-
 In contrast, you could declare proofs \(p_i\) for each \(A_i\), the arguments of `p`, first
 *then* simply invoke `exact (p p0 p1 ... pN)`. To do this, use the `pose` tactic for forming
 local declarations: `pose (res := definition_of_p_i)`. The parentheses are important.
 
 -   `Show Proof` desugars `pose` into `let...in...` declarations.
 
-**Exercise:**
-Reprove the above without using `refine`, by using `pose` instead.
 
+<a id="orgf64e78c"></a>
 
-<a id="orgd9a3a69"></a>
+# Algebraic Datatypes ---`Inductive` and `case`
 
-# Simple Tactics
-
--   **`simpl`:** If the current subgoal contains a function call with all its arguments, `simpl` will execute the function on the arguments.
-    -   Sometimes a call to `unfold f`, for a particular function `f`, is needed before `simpl` will work.
-
--   **Modus ponens, or function application:** If we have `imp : A -> B, a : A`
-    then `imp a` is of type `B`. This also works if the `imp` contains `forall`'s.
-
--   **Local tactic application:** `t in s` performs the tactic `t` only within
-    the hypothesis, term, `s`. For example, `unfold defnName in item` performs a local rewrite.
-
-
-<a id="orgff6f444"></a>
-
-# Todo COMMENT Algebraic Datatypes
+‘forall’ and type construction allow us to regain many common datatypes, including
+∃, ∧, ∨, =, ~, ⊤, ⊥.
 
 The vernacular command `Inductive` lets us create new types.
 
 -   After a type, say, `T` is defined, we are automatically provided with
-    `T_rect` and `T_ind`.
+    an elimination rule `T_rec` and an induction principle `T_ind`.
+-   Use `“Check T_rec.”` to view their types.
+
+Tactic `“case x.”` creates subgoals for every possible way that `x` could have been
+constructed &#x2014;where ideally `x` occurs in the goal.
+
+-   In particular, for empty type `False`, it creates no new subgoals.
+-   If `x` occurs in some hypothesis of interest, then try performing the `case` *before*
+    introducing the hypothesis so that the case analysis propagates into it.
+-   `case` only changes the goal &#x2014;never the context.
+-   Whenever you use this tactic, indent and place `- admit.` for each possible case,
+    so that way you don't forget about them and the indentation make it clear which
+    tactics are associated with which subgoals.
+    -   Tactic `admit` let's us ignore a goal for a while, but the proof is marked incomplete.
+-   If `x` is constructed from by `cons a0 ... aN`, then the goal obtains
+    these arguments. It's thus very common to have `“case H. intros.”`; in-fact it's so
+    common that this combination is packaged up as the `destruct` tactic.
+
+    `case H. intros a0 ... aN.`  ≈  `destruct H as [a0 ... aN]`.
+
+    -   If no `a_i` are provided, the `as` clause may be omitted, and `H`-ypothesis
+        names are generated.
+    -   If the `case` provides multiple cases, then `destruct` won't work.
+
+If the goal is a value of an ADT, use `refine (name_of_constructor _ ... _)`
+then build up the constituents one at a time.
+
+-   For example, to prove `A ∧ B`, use `refine (conj _ _).`
 
 
-<a id="org1c70008"></a>
+<a id="orgb1dfecd"></a>
 
-# Pattern matching with `destruct`
+# Examples of Common Datatypes
 
-We case on value `e` by `destruct e as [ a00 … am0 | ⋯ | a0n … amn ]`,
-which gives us `n` new subgoals corresponding to the number of constructors that
-could have produced `e` such that the *i*-th constructor has arguments `ai0, …, akᵢ`.
+-   `Prop` Type
+    -   A `Prop` either has a proof or it does not have a proof.
+    -   Coq restricts Prop to being either proven or unproven, rather than true or false.
 
--   The intros pattern `as [ ⋯ ]` lets us use any friendly names of our choosing.
-    We may not provide it at the cost of Coq's generated names for arguments.
+-   ℕaturals
 
--   Many proofs pattern match on a variable right after introducing it,
-    `intros e. destruct e as [⋯]`, and this is abbreviated by the intro pattern:
-    `intros [⋯]`.
+        Inductive nat : Set :=
+          | O : nat   (* Capital-letter O, not the number zero. *)
+          | S : nat -> nat.
 
--   If there are no arguments to name, in the case of a nullary construction, we can just write `[]`.
+-   Options
+
+        Inductive option (A : Type) : Type :=
+          | Some : A -> option A
+          | None : option A.
+
+-   Lists
+
+        Inductive list (A : Type) : Type :=
+         | nil : list A
+         | cons : A -> list A -> list A.
+
+        Infix "::" := cons (at level 60, right associativity) : list_scope.
 
 
-<a id="orge847a72"></a>
+<a id="org13c28f6"></a>
+
+# `True, False, true, false`
+
+-   The empty Prop, having no proofs, is `False.`
+-   The top Prop, having a single proof named `I`, is `True`.
+-   The `bool` type has two values: `true` and `false`.
+
+    Inductive False : Prop := .
+
+    Inductive True : Prop :=
+      | I : True.
+
+    (* ‘Set’ is the type of normal datatypes. *)
+    Inductive bool : Set :=
+      | true : bool
+      | false : bool.
+
+    (* From: Require Import Bool *)
+    Definition eqb (p q : bool) : bool :=
+      match p, q with
+        | true, true => true
+        | true, false => false
+        | false, true => false
+        | false, false => true
+      end.
+
+In the boolean library there is a function `Is_true` which converts booleans
+into their associated Prop counterparts.
+
+    (* “Require Import” is the vernacular to load definitions from a library *)
+    Require Import Bool.
+
+**Exercises:**
+
+    Theorem two: not (Is_true(eqb false true)). Abort.
+    Theorem same: forall a : bool, Is_true(eqb a a). Abort.
+    Theorem ex_falso_quod_libet : (forall A : Prop, False -> A). Abort.
+    Theorem use_case_carefully: (forall a:bool, (Is_true (eqb a true)) -> (Is_true a)). Abort.
+
+
+<a id="orgda7698f"></a>
 
 # `Notation`, `Definition`, and the tactics `fold` and `unfold`
 
@@ -286,11 +487,15 @@ Below `(not A)` and `A -> False` are declared interchangeable.
 
     Notation "~ x" := (not x) : type_scope.
 
-Tactics `unfold defnName` and `fold defnName` will interchange them.
+-   A common proof technique is to ‘unfold’ a definition into familiar operators,
+    work with that, then ‘fold’ up the result using a definition.
 
-`Notation` creates an operator and defines it as an alternate notation for an expression.
+-   Tactics `unfold defnName` and `fold defnName` will interchange them.
 
-( Use `intros` when working with negations since they are implications! )
+-   In Coq, we use the tactic `unfold f` to rewrite the goal using the definition of `f`,
+    then use `fold f`, if need be.
+-   `Notation` creates an operator and defines it as an alternate notation for an expression.
+-   ( Use `intros` when working with negations since they are implications! )
 
     (* If this is a recursive function, use `Fixpoint` in-place of `Definition`.*)
     Definition my_function (a0 : A0) ⋯ (a99 : A99) : B :=
@@ -306,120 +511,38 @@ Tactics `unfold defnName` and `fold defnName` will interchange them.
     an operator immediately with a function definition.
 
 
-<a id="orgea2dd24"></a>
+<a id="orgbf6b1dd"></a>
 
-# Todo COMMENT Proof Refinement
+# Function Tactic `simpl` &#x2014;“simplify”
 
-Suppose our goal is to prove B but we have a proof `imp : A → B`,
-then if we have an `A` function application suffices. However,
-when we have no `A` lying about and would like to focus on constructing
-such an `A` we use `refine (imp _)` which forces us into constructing
-a subgoal `A`. It is good practice to then indent proof for the new subgoal.
+-   If the current subgoal contains a function call with all its arguments,
+    `simpl` will execute the function on the arguments.
+    -   Sometimes a unfold is needed before `simpl` will work.
 
--   If `imp` has more arguments then `refine` would take more underscores corresponding
-    to the arguments we do not have proofs of; we may place the arguments which we
-    do have access to there and then.
-
--   Needless to say, a `refine` may occur within a `refine`.
-
-\iffalse
-
-    Theorem nexted_refine_example : (forall A B C : Prop, A -> (A->B) -> (A->B->C) -> C).
-    Proof.
-      intros A B C.
-      intros Apf AtoB AthenBthenC.
-      refine (AthenBthenC _ _).
-	exact Apf.
-	refine (AtoB _).
-	  exact Apf.
-    Qed.
-
-    Theorem direct_proof : (forall A B C : Prop, A -> (A->B) -> (A->B->C) -> C).
-    Proof.
-      intros A B C Apf AB ABC.
-      exact (ABC Apf (AB Apf)).
-    Qed.
-
-\fi
-
-\newpage
+-   **Modus ponens, or function application:** If we have `imp : A -> B, a : A`
+    then `imp a` is of type `B`. This also works if the `imp` contains `forall`'s.
 
 
-<a id="org7b2e9e7"></a>
+<a id="org7639a17"></a>
 
-# Examples of Common Datatypes
+# Conjunction & Disjunction &#x2014;products & sums&#x2014; and ‘iff’
 
--   `Prop` Type
-    -   A `Prop` either has a proof or it does not have a proof.
-    -   Coq restricts Prop to being either proven or unproven, rather than true or false.
+    (* Haskell: Either a b = Left a | Right b *)
+    Inductive or (A B:Prop) : Prop :=
+      | or_introl : A -> A \/ B
+      | or_intror : B -> A \/ B
+    where "A \/ B" := (or A B) : type_scope.
 
--   Sums
+    (* Haskell: Pair a b = MkPair a b *)
+    Inductive and (A B:Prop) : Prop :=
+      conj : A -> B -> A /\ B
+    where "A /\ B" := (and A B) : type_scope.
 
-	Inductive or (A B:Prop) : Prop :=
-	  | or_introl : A -> A \/ B
-	  | or_intror : B -> A \/ B
-	where "A \/ B" := (or A B) : type_scope.
-
--   Products
-
-	Inductive and (A B:Prop) : Prop :=
-	  conj : A -> B -> A /\ B
-	where "A /\ B" := (and A B) : type_scope.
-
--   ℕaturals
-
-	Inductive nat : Set :=
-	  | O : nat   (* Capital-letter O, not the number zero. *)
-	  | S : nat -> nat.
-
--   Options
-
-	Inductive option (A : Type) : Type :=
-	  | Some : A -> option A
-	  | None : option .A
-
--   Lists
-
-	Inductive list (A : Type) : Type :=
-	 | nil : list A
-	 | cons : A -> list A -> list A.
-
-	Infix "::" := cons (at level 60, right associativity) : list_scope.
+    Definition iff (A B:Prop) := (A -> B) /\ (B -> A).
+    Notation "A <-> B" := (iff A B) : type_scope.
 
 
-<a id="org33f6484"></a>
-
-# `True, False, true, false`
-
-The vernacular command `Inductive` lets you create a new type.
-
--   The empty Prop, having no proofs, is `False.`
--   The top Prop, having a single proof named `I`, is `True`.
--   The `bool` type has two values: `true` and `false`.
-
-    Inductive False : Prop := .
-
-    Inductive True : Prop :=
-      | I : True.
-
-    Inductive bool : Set :=
-      | true : bool
-      | false : bool.
-
-\iffalse principle of explosion
-
-    Theorem ex_falso_quod_libet : (forall A : Prop, False -> A).
-    Proof.
-      intros A []
-    Qed.
-
-\fi
-
-In the boolean library there is a function `Is_true` which converts booleans
-into their associated Prop counterparts.
-
-
-<a id="orgd918359"></a>
+<a id="org67dfa39"></a>
 
 # Existence ∃
 
@@ -431,115 +554,14 @@ into their associated Prop counterparts.
        format "'[' 'exists'  '/  ' x  ..  y ,  '/  ' p ']'")
       : type_scope.
 
-Note that the constructor takes 3 arguments: The predicate `P`, the witness `x`, and a proof of `P x`.
+Note that the constructor takes 3 arguments:
+The predicate `P`, the witness `x`, and a proof of `P x`.
 
 If we pose a witness beforehand then `refine (ex_intro _ witness _).`, Coq will infer `P` from
-the current goal and the new subgoal is the proof that the witness satisfies the predicate.
-
-\iffalse
-Note that De Morgan's law, ¬∀≈∃¬, holds! Prove an implication to see this.
-
-    Theorem demorgan : (forall P : Set->Prop, (forall x, ~(P x)) -> ~(exists x, P x)).
-    Proof.
-      intros P.
-      intros noP.
-      unfold not.
-      intros ex.
-      destruct ex as [ witness  proof ].
-      pose (uhoh := noP witness).
-      pose (absurd := uhoh proof).
-      case absurd.
-    Qed.
-
-The converse is also true!
-\fi
+the current goal and the new subgoal is the proof that the witness satisfies the predicate. This is the way to prove an existence claim.
 
 
-<a id="org805395a"></a>
-
-# Equality, `rewrite`, and `reflexivity`
-
-Two operators,
-
--   `x = y :> A` says that `x` and `y` are equal and both have type `A`.
--   `x = y` does the same but let's Coq infer the type `A`.
-
-    Inductive eq (A:Type) (x:A) : A -> Prop :=
-	eq_refl : x = x :>A
-
-    where "x = y :> A" := (@eq A x y) : type_scope.
-
-    Notation "x = y" := (x = y :>_) : type_scope.
-
-\iffalse
-
-The "Inductive" statement creates a new type "eq" which is a function of a type A and 2 values of type A to Prop. (NOTE: One value of type A is written (x:A) before the ":" and the other is written "A ->" after. This is done so Coq infers the type "A" from the first value and not the second.) Calling "eq" with all its arguments returns a proposition (with type Prop). A proof of "eq x y" means that "x" and "y" both have the same type and that "x" equals "y".
-
-The only way to create a proof of type "eq" is to use the only constructor "eq<sub>refl</sub>". It takes a value of "x" of type "A" and returns "@eq A x x", that is, that "x" is equal to itself. (The "@" prevents Coq from inferring values, like the type "A".) The name "eq<sub>refl</sub>" comes from the reflexive property of equality.
-
-\fi
-
-Rather than using `destruct`, most proofs using equality use the tactics `rewrite ⟨orientation⟩.`
-If `xEy` has type `x = y`, then `rewrite -> xEy` will replace `x` with `y` in the subgoal, while using orientation `<-` rewrites the
-other-way, replacing `y` with `x`.
-
--   This can also be used with a previously proved theorem.
-    If the statement of said theorem involves quantified variables,
-    Coq tries to instantiate them by matching with the current goal.
-
--   As with destructing, the pattern `intros eq. rewrite -> eq.`
-    is abbreviated by the intro pattern `intros [].` which performs
-    a left-to-right rewrite in the goal.
-
-Use the `reflexivity` tactic to discharge a goal of type `x = x`.
-
--   This tactic performs some simplification automatically
-    when checking that two sides are equal; e.g., it tries `simpl` and `unfold`.
-
-    \iffalse
-    Moreover, it will be useful later to know that [reflexivity]
-    does somewhat <span class="underline">more</span> simplification than [simpl] does &#x2013; for
-    example, it tries "unfolding" defined terms, replacing them with
-    their right-hand sides.  The reason for this difference is that,
-    if reflexivity succeeds, the whole goal is finished and we don't
-    need to look at whatever expanded expressions [reflexivity] has
-    created by all this simplification and unfolding; by contrast,
-    [simpl] is used in situations where we may have to read and
-    understand the new goal that it creates, so we would not want it
-    blindly expanding definitions and leaving the goal in a messy
-    state.
-    \fi
-
-
-<a id="org0eb2dda"></a>
-
-# Discrepancy
-
-Coq uses the operator `<>` for inequality, which really means *equality is unprovable* or *equality implies False*.
-
-    Notation "x <> y  :> T" := (~ x = y :>T) : type_scope.
-    Notation "x <> y" := (x <> y :>_) : type_scope.
-
-Datatype constructors are necessarily disjoint, hence if we ever obtain a proof `pf`
-of distinct constructors being equal then we may invoke `discriminate pf` to short-circuit the
-current goal, thereby eliminating a case that could not have happened.
-
-\iffalse
-`discriminate` operates on a hypothesis where values of inductive type are compared using equality. If the constructors used to generate the equality type are different, like here where we have `true = false`, then Coq knows that situation can never happen. It's like a proof of `False`. In that case, `discriminate <hypname>.` ends the subgoal.
-
-    Theorem example  : forall A, true = false -> A.
-    Proof.
-      intros A tEf.
-      discriminate tEf.
-    Qed.
-
-When working with inductive types, you will use "discriminate" to eliminate a lot of cases that can never happen.
-
-RULE: If you have a hypothesis "<name> : (<constructor1> &#x2026;) = (<constructor2> &#x2026;) OR "<name> : <constant1> = <constant2> Then use the tactic "discriminate <name>"
-\fi
-
-
-<a id="org514a2c5"></a>
+<a id="orgaceee4f"></a>
 
 # Searching for Existing Proofs
 
@@ -567,43 +589,207 @@ RULE: If you have a hypothesis "<name> : (<constructor1> &#x2026;) = (<construct
     (* Nat.add_sub_assoc: forall n m p : nat, p <= m -> n + (m - p) = n + m - p *)
 
 
-<a id="orgb88156a"></a>
+<a id="org699e6cf"></a>
 
-# Todo COMMENT More Basic Tactics
+# Coq Modules
 
--   If we have access to some `H : ∀ 𝓍, A₁ → … Aₙ → G` where `G`,
-    up to substitution, is exactly
-    the current goal, then `apply f` introduces `n` many new subgoals
-    that need to then be tackled and variables `𝓍` are inferred.
-    ( "Modus Ponens"! )
-    -   When a variable cannot be inferred we must give it explicitly: `apply H with (xᵢ := ⋯).`
-    -   `apply` will perform simplification first, if needed.
+Module systems parameterise proofs and tactics over structures.
 
--   `symmetry` switches the left and right sides of an equality in
-    the goal.
+    Check 0.
+    (**
 
--   The constructors of inductively defined types are injective and disjoint.
-    These principles are invoked by the tactic `inversion H`, where `H` denotes an
-    equality involving constructors as main application.
-    For same constructors this acts as injectivity, generating all equations
-    resulting from `H` and rewriting the goal along them.
-    For distinct constructors, it produces no goals: What you have is impossible,
-    ergo a contradiction whence anything follows.
-    -   We can name the equations that `inversion` generates with an
-	`as ...`.
+    1. A ~Module Type~ contains the signature of the abstract structure to work from;
+       it lists the ~Parameter~'s and ~Axiom~'s we want to use, possibly along
+       with notation declaration to make the syntax easier.
+    **)
+    (**
 
--   This is useful theorem, not a tactic:
-    `f_equal : ∀ (A B : Type) (f: A -> B) (x y: A), x = y -> f x = f y`
+    |      || Signature     | Structure      |
+    | Coq  || ≈ module type | ≈ module       |
+    | Agda || ≈ record type | ≈ record value |
+    | JavaScript || ≈ prototype | ≈ JSON object |
 
--   Using Tactics on Hypotheses:
-    By default, most tactics work on the goal and leave the context unchanged.
-    However, most tactics also have a variant that performs a similar operation
-    on a statement in the context: `t in H` performs tactic `t` only on `H` thereby
-    altering only `H`.
+    It is perhaps seen most easily in the last entry in the table, that
+    modules and modules types are essentially the same thing: They are just
+    partially defined record types. Again there is a difference in the usage intent:
 
-**With induction, don't introduce things unless you have to!**
-What we can do instead is to first introduce all the quantified
-    variables and then <span class="underline">re-generalize</span> one or more of them,
-    selectively taking variables out of the context and putting them
-    back at the beginning of the goal.  The [generalize dependent m]
-    tactic does this.
+    | Concept | Intent |
+    |---------|--------|
+    | Module types | Any name may be opaque, undefined. |
+    | Modules | All names must be fully defined. |
+
+    **)
+
+    Module Type Graph.
+      Parameter Vertex : Type.
+      Parameter Edges : Vertex -> Vertex -> Prop.
+      Infix "<=" := Edges : order_scope.
+      Open Scope order_scope.
+      Axiom loops : forall e, e <= e.
+      Parameter decidable : forall x y, {x <= y} + {not (x <= y)}.
+      Parameter connected : forall x y, {x <= y} + {y <= x}.
+    End Graph.
+
+    (* To form an instance of the graph module type, we define a module *)
+    (* that satisfies the module type signature: The ~<:~ declaration requires *)
+    (* us to have definitions and theorems with the same names and types *)
+    (* as those listed in the module type's signature. *)
+
+    Require Import Bool.
+
+    Module BoolGraph <: Graph.
+      Definition Vertex := bool.
+      Definition Edges  := fun x => fun y => leb x y.
+      Infix "<=" := Edges : order_scope.
+      Open Scope order_scope.
+      Theorem loops: forall x : Vertex, x <= x.
+        Proof.
+        intros; unfold Edges, leb; destruct x; tauto.
+        Qed.
+      Theorem decidable: forall x y, {Edges x y} + {not (Edges x y)}.
+        Proof.
+          intros; unfold Edges, leb; destruct x, y.
+          all: (right; discriminate) || (left; trivial).
+      Qed.
+      Theorem connected: forall x y, {Edges x y} + {Edges y x}.
+        Proof.
+          intros; unfold Edges, leb. destruct x, y.
+          all: (right; trivial; fail) || left; trivial.
+      Qed.
+    End BoolGraph.
+
+    (*
+    Now we can write a “module functor”: A module that takes some ~Module Type~ parameters. E.g., here is a module that define a minimum function.
+
+    Min is a function-on-modules; the input type is Graph
+    and the output module type is “Sig Definition min : ⋯. Parameter case_analysis: ⋯. End”. This is similar to JavaScript's approach.
+    *)
+    Module Min (G : Graph).
+      Import G. (* I.e., open it so we can use names in unquantifed form. *)
+      Definition min a b : Vertex := if (decidable a b) then a else b.
+      Theorem case_analysis: forall P : Vertex -> Type, forall x y,        (x <= y -> P x) -> (y <= x -> P y) -> P (min x y).
+      Proof.
+        intros. (* P, x, y, and hypothesises H₀, H₁ now in scope*)
+        (* Goal: P (min x y) *)
+        unfold min. (* Rewrite “min” according to its definition. *)
+        (* Goal: P (if decidable x y then x else y) *)
+        destruct (decidable x y). (* Pattern match on the result of “decidable”. *)
+        (* Subgoal 1: P x  ---along with new hypothesis H₃ : x ≤ y *)
+        tauto. (* i.e., modus ponens using H₁ and H₃ *)
+        (* Subgoal 2: P y  ---along with new hypothesis H₃ : ¬ x ≤ y *)
+        destruct (connected x y).
+        (* Subgoal 2.1: P y ---along with new hypothesis H₄ : x ≤ y *)
+        absurd (x <= y); assumption.
+        (* Subgoal 2.2: P y ---along with new hypothesis H₄ : y ≤ x *)
+        tauto. (* i.e., modus ponens using H₂ and H₄ *)
+      Qed.
+    End Min.
+
+    (* We may now apply the module functor. *)
+
+    Module Conjunction := Min BoolGraph.
+    Export Conjunction.
+    Print min.
+    (*
+    min =
+    fun a b : BoolGraph.Vertex => if BoolGraph.decidable a b then a else b
+         : BoolGraph.Vertex -> BoolGraph.Vertex -> BoolGraph.Vertex
+     *)
+
+    (*
+    Unlike the previous functor, which had its return type inferred, we may
+    explicitly declare a return type. E.g., the following functor is
+    a Graph → Graph function.
+    *)
+    Module Dual (G : Graph) <: Graph.
+      Definition Vertex := G.Vertex.
+      Definition Edges  x y : Prop := G.Edges y x.
+      Definition loops := G.loops.
+      Infix "<=" := Edges : order_scope.
+      Open Scope order_scope.
+      Theorem decidable: forall x y, {x <= y} + {not (x <= y)}.
+        Proof.
+          unfold Edges. pose (H := G.decidable). auto.
+      Qed.
+      Theorem connected: forall x y, {Edges x y} + {Edges y x}.
+        Proof.
+          unfold Edges.  pose (H := G.connected). auto.
+      Qed.
+    End Dual.
+
+    (* Example use, with renaming “min ↦ max” *)
+    Module Max (G : Graph).
+      (* Module applications cannot be chained; intermediate modules must be named. *)
+      Module DualG   := Dual G.
+      Module Flipped := Min DualG.
+      Import G.
+      Definition max := Flipped.min.
+      Definition max_case_analysis:
+            forall P : Vertex -> Type, forall x y,
+            (y <= x -> P x) -> (x <= y -> P y) -> P (max x y)
+            := Flipped.case_analysis.
+    End Max.
+
+    (*
+    See the ModuleSystemTutorial in Github coq/coq:
+    https://github.com/coq/coq/wiki/ModuleSystemTutorial
+    *)
+
+
+    (* ---------------------------------------------------------------------------- *)
+
+    (* Coq has generative modules: Each application produces a new datatype instance. *)
+    Module Type Unit. End Unit. (* Empty signature. *)
+    Module TT <: Unit. End TT.  (* Empty structure. *)
+    Module F (X : Unit).
+      Inductive t : Type := MakeT.
+    End F.
+
+    Module A := F TT.
+    Module B := F TT.
+    Fail Check eq_refl : A.t = B.t.
+    Print A.t.
+
+    Module Type Carrier. Parameter t : Type. End Carrier.
+    Module Nat <: Carrier. Definition t := nat. End Nat.
+
+    Module Type Morphism (X : Carrier) <: Carrier. Parameter t : Type. End Morphism.
+    Module Identity (X : Carrier) <: Morphism X. Definition t := X.t. End Identity.
+
+    Module Alias  (X : Carrier). Module M := X. End Alias.
+    Module AtNat  (F : Morphism). Module M := F Nat. End AtNat.
+
+    Module N := Alias Nat.
+    Print N.M.t.
+    (* N.M.t = Nat.t
+         : Type
+
+    Modules η-expand and so aliasing does nothing.
+     *)
+
+    Module O := AtNat Identity.
+    Print O.M.t.
+    (*
+    [ O.M.t : Type ] ; i.e., an opaque type
+
+    Type of functors do not η-reduce, and as such one cannot expect them to be applicative, and so are generative ^_^
+
+    See coq/coq OpenIssuesWithModules: https://github.com/coq/coq/wiki/OpenIssuesWithModules
+     *)
+
+
+<a id="orgdc02afb"></a>
+
+# Reads
+
+-   [ ] [A tutorial by Mike Nahas](https://coq.inria.fr/tutorial-nahas) &#x2014;an excellent beginner's tutorial!
+-   [ ] [Theorem proving with Coq](http://flint.cs.yale.edu/cs430/sectionNotes/section1/CoqTutorial.pdf) &#x2014;terse Coq overview, 13 pages
+-   [ ] [The Coq Proof Assistant, A Tutorial](http://flint.cs.yale.edu/cs430/coq/pdf/Tutorial.pdf) &#x2014;gentle, 53 pages.
+-   [ ] [Introduction to the Coq proof-assistant for practical software verification](https://www.lri.fr/~paulin/LASER/course-notes.pdf) &#x2014;compact! 50 pages
+-   [ ] [Mathematical Components](https://math-comp.github.io/mcb/book.pdf) &#x2014;formalisation techniques ♥‿♥
+-   [ ] [Certified Programming with Dependent Types](http://adam.chlipala.net/cpdt/html/toc.html)
+-   [ ] [Mechanizing Mathematics with Dependent Types](https://ilyasergey.net/pnp/pnp.pdf) &#x2014;ssreflect!
+-   [ ] [A Tutorial on (Co-)Inductive Types in Coq](http://www.labri.fr/perso/casteran/RecTutorial.pdf)
+-   [ ] [Software Foundations](https://softwarefoundations.cis.upenn.edu/) &#x2014;and ‘vfa’!
+
+[Theory behind Coq](https://github.com/coq/coq/wiki/TheoryBehindCoq)
